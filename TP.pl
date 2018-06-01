@@ -4,17 +4,16 @@
 
 	%% ---AUTRES--- %%
 
-sudokuGrid([[[[9,' ',8],[' ',1,7],[' ',5,' ']],
-[[' ',' ',' '],[5,9,' '],[7,' ',8]],
-[[' ',' ',4],[6,' ',' '],[' ',' ',' ']]],
-[[[' ',' ',' '],[' ',7,' '],[2,8,1]],
-[[' ',7,3],[9,' ',8],[5,6,' ']],
-[[2,8,6],[' ',4,' '],[' ',' ',' ']]],
-[[[' ',' ',' '],[' ',' ',4],[9,' ',' ']],
-[[3,' ',7],[' ',6,9],[' ',' ',' ']],
-[[' ',6,' '],[8,3,' '],[4,' ',2]]]]).
-
-
+sudokuInitial([[[[9,' ',8],[' ',1,7],[' ',5,' ']],
+			[[' ',' ',' '],[5,9,' '],[7,' ',8]],
+			[[' ',' ',4],[6,' ',' '],[' ',' ',' ']]],
+			[[[' ',' ',' '],[' ',7,' '],[2,8,1]],
+			[[' ',7,3],[9,' ',8],[5,6,' ']],
+			[[2,8,6],[' ',4,' '],[' ',' ',' ']]],
+			[[[' ',' ',' '],[' ',' ',4],[9,' ',' ']],
+			[[3,' ',7],[' ',6,9],[' ',' ',' ']],
+			[[' ',6,' '],[8,3,' '],[4,' ',2]]]]).
+			
 non(A) :- A, !, fail.
 non(_).
 
@@ -60,7 +59,7 @@ changer2(V,X,[A|B],[C|D]):- X>0, X1 is (X-1), changer2(V,X1,B,D), C = A.
 changer1(V,X,[A|B],[C|D]):- X<3, changer2(V,X,A,C), D = B, !.
 changer1(V,X,[A|B],[C|D]):- X1 is (X-3), changer1(V,X1,B,D), C = A.
 
-% remplacer l'element (X,Y) par V
+% remplacer l'element (X,Y) par V: utiliser seulement changer(Valeur,Xcoor,Ycoor,InList,OutList)
 changer3(V,X,0,[A|B],[C|B]):- changer1(V,X,A,C).
 changer3(V,X,Y,[A|B],[C|D]):- Y>0, Y1 is (Y-1), changer3(V,X,Y1,B,D), C = A.
 changer(V,X,Y,[A|B],[C|D]):- Y<3, changer3(V,X,Y,A,C), D = B, !.
@@ -105,7 +104,7 @@ verif([X|Q],E):- verif(Q,E), element(X,E), !, fail.
 verif([X|Q],[X|E]):- verif(Q,E).
 
 	%% ---PROGRAMME PRINCIPAL--- %%
-menu_sudoku :- repeat, menu, !.
+sudoku :- repeat, menu, !.
 menu :- nl, write('====================================================='),nl,
 	write('======= Bienvenue dans notre programme sudoku ======='),nl,
 	write('====================================================='),nl,nl,
@@ -118,25 +117,29 @@ menu :- nl, write('====================================================='),nl,
 	handle(Choice),
 	Choice=4, nl.
 
-handle(1):- write('---- Resolution sudoku ----'), repeat, menu1, !.
+handle(1):- write('---- Resolution sudoku ----'), sudokuInitial(S),
+	asserta(sudokuGrid(S)), repeat, menu1, !.
 handle(2):- write('---- Proposition sudoku ----'),!.
 handle(4):- write('---- Au revoir ! ----'),!.
 handle(_):- write('---- Vous avez mal choisi ----'),!.
 
+% Menu resolution sudoku
 menu1 :- nl, sudokuGrid(S), affS(S), nl,
 	write('1. Definir numero'), nl,
 	write('2. Effacer numero'), nl,
 	write('4. Quitte'), nl,
 	write('Entrer un choix: '),
 	read(Choice), nl,
-	handle1(Choice),
+	handle1(Choice,S),
 	Choice=4, nl.
-	
-handle1(1):- write('Entrer coordonnee X: '), read(X), valid(X),nl,
+
+% Definition d'un numero	
+handle1(1,S):- write('Entrer coordonnee X: '), read(X), valid(X),nl,
 	write('Entrer coordonnee Y: '), read(Y), valid(Y),nl,
-	write('Entrer numero: '), read(N), valid(N).
-	
-handle1(1):- !, fail.
+	write('Entrer numero: '), read(N), valid(N),
+	X1 is (X-1), Y1 is (Y-1), changer(N,X1,Y1,S,S1),
+	retract(sudokuGrid(S)), asserta(sudokuGrid(S1)), !.
+handle1(1,_):- nl, write('Donnee invalide!!!'), nl, !, fail.
 	
 
 
