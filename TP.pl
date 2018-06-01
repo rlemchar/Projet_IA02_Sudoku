@@ -1,5 +1,5 @@
 
-							%%% SUDOKU-SUDOKU-SUDOKU %%%
+							%%% SUDOKU-SUDOKU-SUDOKU %%%%
 
 	%% ---AUTRES--- %%
 %	[[[[a,b,c],[d,e,f],[g,h,i]],
