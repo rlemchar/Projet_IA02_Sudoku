@@ -65,8 +65,8 @@ changer(V,X,Y,[A|B],[C|D]):- Y<3, changer3(V,X,Y,A,C), D = B, !.
 changer(V,X,Y,[A|B],[C|D]):- Y1 is (Y-3), changer(V,X,Y1,B,D), C = A.
 
 % verifier que c'est un chiffre valide
-correct(X):- X>0, X=<9, integer(X), !.
-correct(_):- fail.
+valid(X):- X>0, X=<9, integer(X), !.
+valid(_):- fail.
 
 	%% ---VERIFICATION SUDOKU--- %%
 
@@ -74,14 +74,13 @@ correct(_):- fail.
 getNlist([A|_],0,A).
 getNlist([_|B],X,N) :- X>=1, X1 is X-1, getNlist(B,X1,N).
 
-%recuperer les 9 elements d'un bloc dans une liste
+% recuperer les 9 elements d'un bloc dans une liste
 getBlock(_,-1,_,[]):- !.
 getBlock(X,Y,[A|B],O):- Y<0, Y1 is (Y+1), getNlist(A,X,O1), getBlock(X,Y1,B,O2), concat(O1,O2,O).
 getBlock(X,Y,I,O):- getNlist(I,Y,I1), Y1 is -4, getBlock(X,Y1,I1,O), !.
 
-%recuperer les 9 elements d'une ligne dans une liste
+% recuperer les 9 elements d'une ligne dans une liste
 % Y coordonnée ligne
-
 getLine(-1,_,[]):- !.
 getLine(Y,I,O):- Y<0, S is (Y+4), Y1 is Y+1, getNlist(I,S,O1), getLine(Y1,I,O2), concat(O1,O2,O).
 getLine(Y,I,O):- S is floor(Y/3), S1 is (Y rem 3), Y1 is -4, getNlist(I,S,I1), getNlist(I1,S1,I2), getLine(Y1,I2,O), !.
@@ -101,24 +100,39 @@ verif([X|Q],E):- verif(Q,E), element(X,E), !, fail.
 verif([X|Q],[X|E]):- verif(Q,E).
 
 	%% ---PROGRAMME PRINCIPAL--- %%
-
 menu_sudoku :- repeat, menu, !.
 menu :- nl, write('====================================================='),nl,
 	write('======= Bienvenue dans notre programme sudoku ======='),nl,
 	write('====================================================='),nl,nl,
 	write(' Que voulez vous faire ?'),nl,nl,
-	write('1. Résoudre un sudoku'),nl,
+	write('1. Resoudre un sudoku'),nl,
 	write('2. Proposer un sudoku'),nl,
 	write('4. Quitter'),nl,nl,
-	write('Entrer un choix :'),
+	write('Entrer un choix : '),
 	read(Choice), nl,
 	handle(Choice),
 	Choice=4, nl.
 
-handle(1):- write('---- Résolution sudoku ----'),!.
+handle(1):- write('---- Resolution sudoku ----'), repeat, menu1, !.
 handle(2):- write('---- Proposition sudoku ----'),!.
 handle(4):- write('---- Au revoir ! ----'),!.
 handle(_):- write('---- Vous avez mal choisi ----'),!.
+
+menu1 :- nl, sudokuGrid(S), affS(S), nl,
+	write('1. Definir numero'), nl,
+	write('2. Effacer numero'), nl,
+	write('4. Quitte'), nl,
+	write('Entrer un choix: '),
+	read(Choice), nl,
+	handle1(Choice),
+	Choice=4, nl.
+	
+handle1(1):- write('Entrer coordonnee X: '), read(X), valid(X),nl,
+	write('Entrer coordonnee Y: '), read(Y), valid(Y),nl,
+	write('Entrer numero: '), read(N), valid(N).
+	
+handle1(1):- !, fail.
+	
 
 
 	%% ---AUTRES2--- %%
