@@ -3,17 +3,30 @@
 
 
 	%% ---AUTRES--- %%
+%	[[[[a,b,c],[d,e,f],[g,h,i]],
+%	  [[a,b,c],[d,e,f],[g,h,i]],
+%	  [[a,b,c],[d,e,f],[g,h,i]]],
+%	 [[[a,b,c],[d,e,f],[g,h,i]],
+%	  [[a,b,c],[d,e,f],[g,h,i]],
+%	  [[a,b,c],[d,e,f],[g,h,i]]],
+%	 [[[a,b,c],[d,e,f],[g,h,i]],
+%	  [[a,b,c],[d,e,f],[g,h,i]],
+%	  [[a,b,c],[d,e,f],[g,h,i]]]]
 
 non(A) :- A, !, fail.
 non(_).
 
-%is list?
+% appartenance à une liste
+element(_,[]):- fail.
+element(X,[X|_]).
+element(X,[_|Q]):- element(X,Q).
+
+% is list?
 isList([]).
 isList([_|B]):- isList(B).
 
-%concatenation de listes
-concat([],[],[]).
-concat([],[C|D],[C|E]):- concat([],D,E).
+% concatenation de listes
+concat([],C,C).
 concat([A|B],C,[A|E]):- concat(B,C,E),!.
 
 %% resto R is (A rem B).
@@ -21,35 +34,39 @@ concat([A|B],C,[A|E]):- concat(B,C,E),!.
 
 	%% ---AFFICHAGE-- %%
 
-%afficher liste de Trois elements
+% afficher liste de Trois elements
 affT([A|[]]) :- write(A), !.
 affT([A|B])  :- write(A), write(' '), affT(B).
 
-%afficher Ligne de listes
+% afficher Ligne de listes
 affL([A|[]]) :- affT(A), !.
 affL([A|B])  :- affT(A), write('|'), affL(B).
 
-%afficher Groupe de lignes
+% afficher Groupe de lignes
 affG([A|[]]) :- affL(A), nl, !.
 affG([A|B])  :- affL(A), nl, affG(B).
 
-%afficher Sudoku
+% afficher Sudoku
 affS([A|[]]) :- affG(A), !.
 affS([A|B])  :- affG(A), write('-----------------'), nl, affS(B).
 
 	%% ---MODIFICATION DES VALEURS--- %%
 
-%remplacer l'Xeme element de la ligne est remplace par V
+% remplacer l'Xeme element de la ligne est remplace par V
 changer2(V,0,[_|B],[V|B]).
 changer2(V,X,[A|B],[C|D]):- X>0, X1 is (X-1), changer2(V,X1,B,D), C = A.
 changer1(V,X,[A|B],[C|D]):- X<3, changer2(V,X,A,C), D = B, !.
 changer1(V,X,[A|B],[C|D]):- X1 is (X-3), changer1(V,X1,B,D), C = A.
 
-%remplacer l'element (X,Y) par V
+% remplacer l'element (X,Y) par V
 changer3(V,X,0,[A|B],[C|B]):- changer1(V,X,A,C).
 changer3(V,X,Y,[A|B],[C|D]):- Y>0, Y1 is (Y-1), changer3(V,X,Y1,B,D), C = A.
 changer(V,X,Y,[A|B],[C|D]):- Y<3, changer3(V,X,Y,A,C), D = B, !.
 changer(V,X,Y,[A|B],[C|D]):- Y1 is (Y-3), changer(V,X,Y1,B,D), C = A.
+
+% verifier que c'est un chiffre valide
+correct(X):- X>0, X=<9, integer(X), !.
+correct(_):- fail.
 
 	%% ---VERIFICATION SUDOKU--- %%
 
@@ -72,31 +89,38 @@ getLine(Y,I,O):- S is floor(Y/3), S1 is (Y rem 3), Y1 is -4, getNlist(I,S,I1), g
 %% recuperer les 9 elements d'une colonne dans une liste
 
 
+% verification d'elements repetés dans une liste (le ' ' ne compte pas)
+%verif([],_):- write('fin').
+%verif([' '|Q],E):- verif(Q,E).
+%verif([X|_],E):- element(X,E), !, fail.
+%verif([X|Q],E):- concat([X],E,E1), verif(Q,E1).
 
+verif([],[]).
+verif([' '|Q],E):- !, verif(Q,E).
+verif([X|Q],E):- verif(Q,E), element(X,E), !, fail.
+verif([X|Q],[X|E]):- verif(Q,E).
 
-
-
-
-	%% ---AUTRES2--- %%
-
-prtch(V,X,Y,I):- changer(V,X,Y,I,O), affS(O).
-
-% PROGRAMME PRINCIPAL
+	%% ---PROGRAMME PRINCIPAL--- %%
 
 menu_sudoku :- repeat, menu, !.
 menu :- nl, write('====================================================='),nl,
-						write('======= Bienvenue dans notre programme sudoku ======='),nl,
-						write('====================================================='),nl,nl,
-						write(' Que voulez vous faire ?'),nl,nl,
-						write('1. Résoudre un sudoku'),nl,
-						write('2. Proposer un sudoku'),nl,
-						write('4. Quitter'),nl,nl,
-						write('Entrer un choix :'),
-						read(Choice), nl,
-						handle(Choice),
-						Choice=4, nl.
+	write('======= Bienvenue dans notre programme sudoku ======='),nl,
+	write('====================================================='),nl,nl,
+	write(' Que voulez vous faire ?'),nl,nl,
+	write('1. Résoudre un sudoku'),nl,
+	write('2. Proposer un sudoku'),nl,
+	write('4. Quitter'),nl,nl,
+	write('Entrer un choix :'),
+	read(Choice), nl,
+	handle(Choice),
+	Choice=4, nl.
 
 handle(1):- write('---- Résolution sudoku ----'),!.
 handle(2):- write('---- Proposition sudoku ----'),!.
 handle(4):- write('---- Au revoir ! ----'),!.
 handle(_):- write('---- Vous avez mal choisi ----'),!.
+
+
+	%% ---AUTRES2--- %%
+
+prtch(V,X,Y,I):- changer(V,X,Y,I,O), affS(O).
