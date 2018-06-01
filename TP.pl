@@ -2,7 +2,7 @@
 								%%% SUDOKU-SUDOKU-SUDOKU %%%
 
 	%% ---AUTRES--- %%
-	
+
 non(A) :- A, !, fail.
 non(_).
 
@@ -66,6 +66,34 @@ getLine(-1,_,[]):- !.
 getLine(Y,I,O):- Y<0, S is (Y+4), Y1 is Y+1, getNlist(I,S,O1), getLine(Y1,I,O2), concat(O1,O2,O).
 getLine(Y,I,O):- S is floor(Y/3), S1 is (Y rem 3), Y1 is -4, getNlist(I,S,I1), getNlist(I1,S1,I2), getLine(Y1,I2,O), !.
 
+%% recuperer les 9 elements d'une colonne dans une liste
+
+
+
+
+
+
+
 	%% ---AUTRES2--- %%
 
 prtch(V,X,Y,I):- changer(V,X,Y,I,O), affS(O).
+
+% PROGRAMME PRINCIPAL
+
+menu_sudoku :- repeat, menu, !.
+menu :- nl, write('====================================================='),nl,
+						write('======= Bienvenue dans notre programme sudoku ======='),nl,
+						write('====================================================='),nl,nl,
+						write(' Que voulez vous faire ?'),nl,nl,
+						write('1. Résoudre un sudoku'),nl,
+						write('2. Proposer un sudoku'),nl,
+						write('4. Quitter'),nl,nl,
+						write('Entrer un choix :'),
+						read(Choice), nl,
+						handle(Choice),
+						Choice=4, nl.
+
+handle(1):- write('---- Résolution sudoku ----'),!.
+handle(2):- write('---- Proposition sudoku ----'),!.
+handle(4):- write('---- Au revoir ! ----'),!.
+handle(_):- write('---- Vous avez mal choisi ----'),!.
