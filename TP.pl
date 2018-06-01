@@ -3,15 +3,17 @@
 
 
 	%% ---AUTRES--- %%
-%	[[[[a,b,c],[d,e,f],[g,h,i]],
-%	  [[a,b,c],[d,e,f],[g,h,i]],
-%	  [[a,b,c],[d,e,f],[g,h,i]]],
-%	 [[[a,b,c],[d,e,f],[g,h,i]],
-%	  [[a,b,c],[d,e,f],[g,h,i]],
-%	  [[a,b,c],[d,e,f],[g,h,i]]],
-%	 [[[a,b,c],[d,e,f],[g,h,i]],
-%	  [[a,b,c],[d,e,f],[g,h,i]],
-%	  [[a,b,c],[d,e,f],[g,h,i]]]]
+
+sudokuGrid([[[[9,' ',8],[' ',1,7],[' ',5,' ']],
+[[' ',' ',' '],[5,9,' '],[7,' ',8]],
+[[' ',' ',4],[6,' ',' '],[' ',' ',' ']]],
+[[[' ',' ',' '],[' ',7,' '],[2,8,1]],
+[[' ',7,3],[9,' ',8],[5,6,' ']],
+[[2,8,6],[' ',4,' '],[' ',' ',' ']]],
+[[[' ',' ',' '],[' ',' ',4],[9,' ',' ']],
+[[3,' ',7],[' ',6,9],[' ',' ',' ']],
+[[' ',6,' '],[8,3,' '],[4,' ',2]]]]).
+
 
 non(A) :- A, !, fail.
 non(_).
@@ -89,11 +91,14 @@ getLine(Y,I,O):- S is floor(Y/3), S1 is (Y rem 3), Y1 is -4, getNlist(I,S,I1), g
 %% recuperer les 9 elements d'une colonne dans une liste
 
 
+
+
 % verification d'elements repetés dans une liste (le ' ' ne compte pas)
 %verif([],_):- write('fin').
 %verif([' '|Q],E):- verif(Q,E).
 %verif([X|_],E):- element(X,E), !, fail.
 %verif([X|Q],E):- concat([X],E,E1), verif(Q,E1).
+
 
 verif([],[]).
 verif([' '|Q],E):- !, verif(Q,E).
