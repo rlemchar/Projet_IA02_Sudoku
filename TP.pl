@@ -88,9 +88,34 @@ getLine(-1,_,[]):- !.
 getLine(Y,I,O):- Y<0, S is (Y+4), Y1 is Y+1, getNlist(I,S,O1), getLine(Y1,I,O2), concat(O1,O2,O).
 getLine(Y,I,O):- S is floor(Y/3), S1 is (Y rem 3), Y1 is -4, getNlist(I,S,I1), getNlist(I1,S1,I2), getLine(Y1,I2,O), !.
 
-%% recuperer les 9 elements d'une colonne dans une liste
+% recuperer les 9 elements d'une colonne dans une liste
+
+% ---- Fonctions intermediaires ------
+
+rowBlockFromRow([Trow|_], RowBlockIndex, Res):- RowBlockIndex =:= 0,
+																									Res = Trow, !.
+rowBlockFromRow([_|Qrow], RowBlockIndex, Res):- NewIndex is RowBlockIndex -1,
+																									rowBlockFromRow(Qrow,NewIndex,Res).
 
 
+
+columnElementFromRow(ColumnIndex,Row, ElementResult):- RowBlockIndex is floor(ColumnIndex/3),
+																					ColIndex is (ColumnIndex rem 3),
+																					rowBlockFromRow(Row, RowBlockIndex, Res),
+																					getNlist(Res,ColIndex,ElementResult).
+
+
+columnFromRowTriplet(_,[],[]).
+columnFromRowTriplet(Column,[T|Q], Res) :- columnElementFromRow(Column,T,ElementResult),
+																					columnFromRowTriplet(Column,Q,ElementResult2),
+																					concat([ElementResult],ElementResult2,Res).
+
+% ---------------------------------------
+
+getColumn(_,[],[]).
+getColumn(Column,[T|Q],Res):- columnFromRowTriplet(Column,T,Res2),
+																getColumn(Column,Q,Res3),
+																concat(Res2,Res3,Res).
 
 
 % verification d'elements repetés dans une liste (le ' ' ne compte pas)
