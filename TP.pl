@@ -14,15 +14,15 @@ sudokuInitial([[[[9,' ',8],[' ',1,7],[' ',5,' ']],
 			[[3,' ',7],[' ',6,9],[' ',' ',' ']],
 			[[' ',6,' '],[8,3,' '],[4,' ',2]]]]).
 
-			sudokuTest([[[[9,1,8],[1,1,7],[1,5,1]],
-						[[1,1,1],[5,9,1],[7,1,8]],
-						[[1,1,4],[6,1,1],[1,1,1]]],
-						[[[1,1,1],[1,7,1],[2,8,1]],
-						[[1,7,3],[9,1,8],[5,6,1]],
-						[[2,8,6],[1,4,1],[1,1,1]]],
-						[[[1,1,1],[1,1,4],[9,1,1]],
-						[[3,1,7],[1,6,9],[1,1,1]],
-						[[1,6,1],[8,3,1],[4,1,2]]]]).
+sudokuTest([[[[9,1,8],[1,1,7],[1,5,1]],
+			[[1,1,1],[5,9,1],[7,1,8]],
+			[[1,1,4],[6,1,1],[1,1,1]]],
+			[[[1,1,1],[1,7,1],[2,8,1]],
+			[[1,7,3],[9,1,8],[5,6,1]],
+			[[2,8,6],[1,4,1],[1,1,1]]],
+			[[[1,1,1],[1,1,4],[9,1,1]],
+			[[3,1,7],[1,6,9],[1,1,1]],
+			[[1,6,1],[8,3,1],[4,1,2]]]]).
 
 non(A) :- A, !, fail.
 non(_).
@@ -75,7 +75,7 @@ changer3(V,X,Y,[A|B],[C|D]):- Y>0, Y1 is (Y-1), changer3(V,X,Y1,B,D), C = A.
 changer(V,X,Y,[A|B],[C|D]):- Y<3, changer3(V,X,Y,A,C), D = B, !.
 changer(V,X,Y,[A|B],[C|D]):- Y1 is (Y-3), changer(V,X,Y1,B,D), C = A.
 
-% verifier que les coordonnées entrés par l'utilisateur sont valides 1-9
+% verifier que les coordonnées entrées par l'utilisateur sont valides 1-9
 validUserInputNumber(X):- X>0, X=<9, integer(X), !.
 validUserInputNumber(_):- fail.
 
@@ -107,20 +107,20 @@ getLine(Y,I,O):- S is floor(Y/3), S1 is (Y rem 3), Y1 is -4, getNlist(I,S,I1), g
 rowBlockFromRow([Trow|_], RowBlockIndex, Res):- RowBlockIndex =:= 0,
 																									Res = Trow, !.
 rowBlockFromRow([_|Qrow], RowBlockIndex, Res):- NewIndex is RowBlockIndex -1,
-																									rowBlockFromRow(Qrow,NewIndex,Res).
+	rowBlockFromRow(Qrow,NewIndex,Res).
 
 
 
 columnElementFromRow(ColumnIndex,Row, ElementResult):- RowBlockIndex is floor(ColumnIndex/3),
-																					ColIndex is (ColumnIndex rem 3),
-																					rowBlockFromRow(Row, RowBlockIndex, Res),
-																					getNlist(Res,ColIndex,ElementResult).
+	ColIndex is (ColumnIndex rem 3),
+	rowBlockFromRow(Row, RowBlockIndex, Res),
+	getNlist(Res,ColIndex,ElementResult).
 
 
 columnFromRowTriplet(_,[],[]).
 columnFromRowTriplet(Column,[T|Q], Res) :- columnElementFromRow(Column,T,ElementResult),
-																					columnFromRowTriplet(Column,Q,ElementResult2),
-																					concat([ElementResult],ElementResult2,Res).
+	columnFromRowTriplet(Column,Q,ElementResult2),
+	concat([ElementResult],ElementResult2,Res).
 
 % ---------------------------------------
 
@@ -192,25 +192,34 @@ listComplete([T|Q]):- (T\=' '),!,
 
 % --------------------------
 
-isSudokuComplete(-1,Sudoku):-!.
+isSudokuComplete(-1,_):-!.
 isSudokuComplete(Index,Sudoku):- getLine(Index,Sudoku,Line),
-																listComplete(Line),
-																NewIndex is Index-1,
-																sudokuComplete(NewIndex,Sudoku).
+	listComplete(Line),
+	NewIndex is Index-1,
+	sudokuComplete(NewIndex,Sudoku).
 isSudokuComplete(Sudoku):- getLine(8,Sudoku,Line),
-													 listComplete(Line),
-													 sudokuComplete(7,Sudoku).
+	listComplete(Line),
+	sudokuComplete(7,Sudoku).
 
 % recuperer l'element à une certaine coordonée
 getElement(X,Y,Sudoku,Element):- valid(X),
-													validCoord(Y),
-													getLine(X,Sudoku,Line),
-													getNlist(Line,Y,Element).
+	validCoord(Y),
+	getLine(X,Sudoku,Line),
+	getNlist(Line,Y,Element).
 
 %verifier si la case est une case jouée
 isPlayableCell(X,Y,Sudoku):- getElement(X,Y,Sudoku,Element),
 Element = ' '.
-isPlayableCell(X,Y,Sudoku):- isJeuJoueur([X,Y]).
+isPlayableCell(X,Y,_):- isJeuJoueur([X,Y]).
+
+	%% ===RESOLUTION SUDOKU=== %%
+
+% Ajouter un numero random dans un sudoku ajouterRand(InSudoku,OutSudoku)
+ajouterRand(I,O1):- repeat, X is random(0,9), repeat , Y is random(0,9), getElement(X,Y,I,' '), repeat, N is random(0,9),
+	changer(X,Y,N,I,O), verificationInput(X,Y,O), O1=O.
+	
+% resoudre un sudoku
+completerSudoku(I,O):- ajouterRand(I,O1), completerSudoku(O1,O).
 
 
 	%% ---PROGRAMME PRINCIPAL--- %%
@@ -236,26 +245,15 @@ handle(2):- write('---- Proposition sudoku ----'),!.
 handle(4):- write('---- Au revoir ! ----'),!.
 handle(_):- write('---- Vous avez mal choisi ----'),!.
 
-% Menu resolution sudoku
-%menu1 :- nl, sudokuGrid(S), affS(S), nl,
-% write('1. Definir numero'), nl,
-%	write('2. Effacer numero'), nl,
-%	write('4. Quitter'), nl,
-%	write('Entrer un choix: '),
-%	read(Choice), nl,
-%	handleResolution(Choice,S),
-%	Choice=4, nl.
-
-
 userSolvingSudoku :- nl, sudokuGrid(S), affS(S), nl,
-									write('1. Definir numero'), nl,
-									write('2. Effacer numero'), nl,
-									write('4. Quitter'), nl,
-									write('Entrer un choix: '),
-									read(Choice), nl,
-									handleResolution(Choice,S),
-									isSudokuComplete(S), nl,
-									write('Vous avez gagné').
+	write('1. Definir numero'), nl,
+	write('2. Effacer numero'), nl,
+	write('4. Quitter'), nl,
+	write('Entrer un choix: '),
+	read(Choice), nl,
+	handleResolution(Choice,S),
+	isSudokuComplete(S), nl,
+	write('Vous avez gagné').
 
 
 
