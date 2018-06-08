@@ -40,9 +40,6 @@ isList([_|B]):- isList(B).
 concat([],C,C).
 concat([A|B],C,[A|E]):- concat(B,C,E),!.
 
-%% resto R is (A rem B).
-%% floor() para la division euclidiana
-
 	%% ---AFFICHAGE-- %%
 
 % afficher liste de Trois elements
@@ -63,24 +60,39 @@ affS([A|B])  :- affG(A), write('-----------------'), nl, affS(B).
 
 	%% ---MODIFICATION DES VALEURS--- %%
 
-% remplacer l'Xeme element de la ligne est remplace par V
+%remplacer l'Xeme element de la ligne est remplace par V
 changer2(V,0,[_|B],[V|B]).
 changer2(V,X,[A|B],[C|D]):- X>0, X1 is (X-1), changer2(V,X1,B,D), C = A.
 changer1(V,X,[A|B],[C|D]):- X<3, changer2(V,X,A,C), D = B, !.
 changer1(V,X,[A|B],[C|D]):- X1 is (X-3), changer1(V,X1,B,D), C = A.
 
-% remplacer l'element (X,Y) par V: utiliser seulement changer(Valeur,Xcoor,Ycoor,InList,OutList)
+%remplacer l'element (X,Y) par V: utiliser seulement changer(Valeur,Xcoor,Ycoor,InList,OutList)
 changer3(V,X,0,[A|B],[C|B]):- changer1(V,X,A,C).
 changer3(V,X,Y,[A|B],[C|D]):- Y>0, Y1 is (Y-1), changer3(V,X,Y1,B,D), C = A.
 changer(V,X,Y,[A|B],[C|D]):- Y<3, changer3(V,X,Y,A,C), D = B, !.
 changer(V,X,Y,[A|B],[C|D]):- Y1 is (Y-3), changer(V,X,Y1,B,D), C = A.
 
-% verifier que les coordonnées entrées par l'utilisateur sont valides 1-9
+
+% remplacer l’Yeme element de la ligne est remplace par V
+%changer2(V,0,[_|B],[V|B]).
+%changer2(V,Y,[A|B],[C|D]):- Y>0, Y1 is (Y-1), changer2(V,Y1,B,D), C = A.
+%changer1(V,Y,[A|B],[C|D]):- Y<3, changer2(V,Y,A,C), D = B, !.
+%changer1(V,Y,[A|B],[C|D]):- Y1 is (Y-3), changer1(V,Y1,B,D), C = A.
+
+% remplacer l'element (X,Y) par V: utiliser seulement changer(Valeur,Xcoor,Ycoor,InList,OutList)
+%changer3(V,Y,0,[A|B],[C|B]):- changer1(V,Y,A,C).
+%changer3(V,Y,X,[A|B],[C|D]):- X>0, X1 is (X-1), changer3(V,Y,X1,B,D), C = A.
+%changer(V,X,Y,[A|B],[C|D]):- X<3, changer3(V,Y,X,A,C), D = B, !.
+%changer(V,X,Y,[A|B],[C|D]):- X1 is (X-3), changer(V,Y,X1,B,D), C = A.
+
+% verifier que les coordonnées entrés par l'utilisateur sont valides 1-9
+
 validUserInputNumber(X):- X>0, X=<9, integer(X), !.
-validUserInputNumber(_):- fail.
+validUserInputNumber(_):- write('Saisie incorrecte'),
+													fail.
 
 % verifier que les coordonnées sont valides en interne 0-9
-validCoord(X):- X>=0, X=<9, integer(X), !.
+validCoord(X):- X>=0, X=<8, integer(X), !.
 validCoord(_):- fail.
 
 	%% ---VERIFICATION SUDOKU--- %%
@@ -131,11 +143,6 @@ getColumn(Column,[T|Q],Res):- columnFromRowTriplet(Column,T,Res2),
 
 
 % verification d'elements repetés dans une liste (le ' ' ne compte pas)
-%verif([],_):- write('fin').
-%verif([' '|Q],E):- verif(Q,E).
-%verif([X|_],E):- element(X,E), !, fail.
-%verif([X|Q],E):- concat([X],E,E1), verif(Q,E1).
-
 
 verif([],[]).
 verif([' '|Q],E):- !, verif(Q,E).
@@ -144,12 +151,17 @@ verif([X|Q],[X|E]):- verif(Q,E).
 
 % verification validité d'un ajout
 
-verificationInput(X,Y,Sudoku):- getLine(X,Sudoku,Line),
+verification(X,Y,Sudoku):- getLine(X,Sudoku,Line),
 																getColumn(Y,Sudoku,Column),
-													%			getBloc(Bloc),
+																blocX is floor(X/3),
+																blocY is floor(Y/3),
+																getBlock(blocX,blocY,Sudoku,Bloc),
 																verif(Line),
 																verif(Column),
-																verif(bloc).
+																verif(Bloc).
+
+verification(X,Y,_):- write('Ajout invalide'),nl, fail.
+
 
 % Ajout d'un élèment par l'utilisateur dans liste des cases jouées
 
@@ -211,6 +223,8 @@ getElement(X,Y,Sudoku,Element):- valid(X),
 isPlayableCell(X,Y,Sudoku):- getElement(X,Y,Sudoku,Element),
 Element = ' '.
 isPlayableCell(X,Y,_):- isJeuJoueur([X,Y]).
+isPlayableCell(X,Y,_):- write("Cette case n'est pas jouable"),
+												fail.
 
 	%% ===RESOLUTION SUDOKU=== %%
 
@@ -220,6 +234,12 @@ ajouterRand(I,O1):- repeat, X is random(0,9), repeat , Y is random(0,9), getElem
 	
 % resoudre un sudoku
 completerSudoku(I,O):- ajouterRand(I,O1), completerSudoku(O1,O).
+
+
+% Verifier si le programme doit finir
+isProgramFinished(Sudoku,_):- isSudokuComplete(Sudoku).
+isProgramFinished(_,Choice):- Choice = 4.
+
 
 
 	%% ---PROGRAMME PRINCIPAL--- %%
@@ -244,6 +264,7 @@ handle(1):- write('---- Resolution sudoku ----'),
 handle(2):- write('---- Proposition sudoku ----'),!.
 handle(4):- write('---- Au revoir ! ----'),!.
 handle(_):- write('---- Vous avez mal choisi ----'),!.
+
 
 userSolvingSudoku :- nl, sudokuGrid(S), affS(S), nl,
 	write('1. Definir numero'), nl,
@@ -277,13 +298,9 @@ handleResolution(2,S):- write('Entrer coordonnee X: '), read(X), validUserInputN
 												changer(' ',X1,Y1,S,S1),
 												retract(sudokuGrid(S)),
 												asserta(sudokuGrid(S1)),
-												deletePlayerMove([X,Y]).
+												deletePlayerMove([X,Y]),!.
 
-handleResolution(1,_):- nl, write('Echec'), nl, !, fail.
-
-
-
-
+handleResolution(_,S):- nl, write('Option invalide'), nl, !, fail.
 
 
 	%% ---AUTRES2--- %%
