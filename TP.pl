@@ -14,7 +14,7 @@ sudokuInitial([[[[9,' ',8],[' ',1,7],[' ',5,' ']],
 			[[3,' ',7],[' ',6,9],[' ',' ',' ']],
 			[[' ',6,' '],[8,3,' '],[4,' ',2]]]]).
 
-			sudokuTest([[[[9,1,8],[1,1,7],[1,5,1]],
+sudokuTest([[[[9,1,8],[1,1,7],[1,5,1]],
 						[[1,1,1],[5,9,1],[7,1,8]],
 						[[1,1,4],[6,1,1],[1,1,1]]],
 						[[[1,1,1],[1,7,1],[2,8,1]],
@@ -40,9 +40,6 @@ isList([_|B]):- isList(B).
 concat([],C,C).
 concat([A|B],C,[A|E]):- concat(B,C,E),!.
 
-%% resto R is (A rem B).
-%% floor() para la division euclidiana
-
 	%% ---AFFICHAGE-- %%
 
 % afficher liste de Trois elements
@@ -63,24 +60,38 @@ affS([A|B])  :- affG(A), write('-----------------'), nl, affS(B).
 
 	%% ---MODIFICATION DES VALEURS--- %%
 
-% remplacer l'Xeme element de la ligne est remplace par V
+%remplacer l'Xeme element de la ligne est remplace par V
 changer2(V,0,[_|B],[V|B]).
 changer2(V,X,[A|B],[C|D]):- X>0, X1 is (X-1), changer2(V,X1,B,D), C = A.
 changer1(V,X,[A|B],[C|D]):- X<3, changer2(V,X,A,C), D = B, !.
 changer1(V,X,[A|B],[C|D]):- X1 is (X-3), changer1(V,X1,B,D), C = A.
 
-% remplacer l'element (X,Y) par V: utiliser seulement changer(Valeur,Xcoor,Ycoor,InList,OutList)
+%remplacer l'element (X,Y) par V: utiliser seulement changer(Valeur,Xcoor,Ycoor,InList,OutList)
 changer3(V,X,0,[A|B],[C|B]):- changer1(V,X,A,C).
 changer3(V,X,Y,[A|B],[C|D]):- Y>0, Y1 is (Y-1), changer3(V,X,Y1,B,D), C = A.
 changer(V,X,Y,[A|B],[C|D]):- Y<3, changer3(V,X,Y,A,C), D = B, !.
 changer(V,X,Y,[A|B],[C|D]):- Y1 is (Y-3), changer(V,X,Y1,B,D), C = A.
 
+
+% remplacer l’Yeme element de la ligne est remplace par V
+%changer2(V,0,[_|B],[V|B]).
+%changer2(V,Y,[A|B],[C|D]):- Y>0, Y1 is (Y-1), changer2(V,Y1,B,D), C = A.
+%changer1(V,Y,[A|B],[C|D]):- Y<3, changer2(V,Y,A,C), D = B, !.
+%changer1(V,Y,[A|B],[C|D]):- Y1 is (Y-3), changer1(V,Y1,B,D), C = A.
+
+% remplacer l'element (X,Y) par V: utiliser seulement changer(Valeur,Xcoor,Ycoor,InList,OutList)
+%changer3(V,Y,0,[A|B],[C|B]):- changer1(V,Y,A,C).
+%changer3(V,Y,X,[A|B],[C|D]):- X>0, X1 is (X-1), changer3(V,Y,X1,B,D), C = A.
+%changer(V,X,Y,[A|B],[C|D]):- X<3, changer3(V,Y,X,A,C), D = B, !.
+%changer(V,X,Y,[A|B],[C|D]):- X1 is (X-3), changer(V,Y,X1,B,D), C = A.
+
 % verifier que les coordonnées entrés par l'utilisateur sont valides 1-9
 validUserInputNumber(X):- X>0, X=<9, integer(X), !.
-validUserInputNumber(_):- fail.
+validUserInputNumber(_):- write('Saisie incorrecte'),
+													fail.
 
 % verifier que les coordonnées sont valides en interne 0-9
-validCoord(X):- X>=0, X=<9, integer(X), !.
+validCoord(X):- X>=0, X=<8, integer(X), !.
 validCoord(_):- fail.
 
 	%% ---VERIFICATION SUDOKU--- %%
@@ -131,11 +142,6 @@ getColumn(Column,[T|Q],Res):- columnFromRowTriplet(Column,T,Res2),
 
 
 % verification d'elements repetés dans une liste (le ' ' ne compte pas)
-%verif([],_):- write('fin').
-%verif([' '|Q],E):- verif(Q,E).
-%verif([X|_],E):- element(X,E), !, fail.
-%verif([X|Q],E):- concat([X],E,E1), verif(Q,E1).
-
 
 verif([],[]).
 verif([' '|Q],E):- !, verif(Q,E).
@@ -144,12 +150,17 @@ verif([X|Q],[X|E]):- verif(Q,E).
 
 % verification validité d'un ajout
 
-verificationInput(X,Y,Sudoku):- getLine(X,Sudoku,Line),
+verification(X,Y,Sudoku):- getLine(X,Sudoku,Line),
 																getColumn(Y,Sudoku,Column),
-													%			getBloc(Bloc),
+																blocX is floor(X/3),
+																blocY is floor(Y/3),
+																getBlock(blocX,blocY,Sudoku,Bloc),
 																verif(Line),
 																verif(Column),
-																verif(bloc).
+																verif(Bloc).
+
+verification(X,Y,_):- write('Ajout invalide'),nl, fail.
+
 
 % Ajout d'un élèment par l'utilisateur dans liste des cases jouées
 
@@ -192,7 +203,7 @@ listComplete([T|Q]):- (T\=' '),!,
 
 % --------------------------
 
-isSudokuComplete(-1,Sudoku):-!.
+isSudokuComplete(-1,_):-!.
 isSudokuComplete(Index,Sudoku):- getLine(Index,Sudoku,Line),
 																listComplete(Line),
 																NewIndex is Index-1,
@@ -202,15 +213,22 @@ isSudokuComplete(Sudoku):- getLine(8,Sudoku,Line),
 													 sudokuComplete(7,Sudoku).
 
 % recuperer l'element à une certaine coordonée
-getElement(X,Y,Sudoku,Element):- valid(X),
+getElement(X,Y,Sudoku,Element):- validCoord(X),
 													validCoord(Y),
 													getLine(X,Sudoku,Line),
 													getNlist(Line,Y,Element).
 
 %verifier si la case est une case jouée
 isPlayableCell(X,Y,Sudoku):- getElement(X,Y,Sudoku,Element),
-Element = ' '.
-isPlayableCell(X,Y,Sudoku):- isJeuJoueur([X,Y]).
+															Element = ' ',!.
+isPlayableCell(X,Y,_):- isJeuJoueur([X,Y]),!.
+isPlayableCell(X,Y,_):- write("Cette case n'est pas jouable"),
+												fail.
+
+% Verifier si le programme doit s'arreter
+isProgramFinished(Sudoku,_):- isSudokuComplete(Sudoku).
+isProgramFinished(_,Choice):- Choice = 4.
+
 
 
 	%% ---PROGRAMME PRINCIPAL--- %%
@@ -236,16 +254,6 @@ handle(2):- write('---- Proposition sudoku ----'),!.
 handle(4):- write('---- Au revoir ! ----'),!.
 handle(_):- write('---- Vous avez mal choisi ----'),!.
 
-% Menu resolution sudoku
-%menu1 :- nl, sudokuGrid(S), affS(S), nl,
-% write('1. Definir numero'), nl,
-%	write('2. Effacer numero'), nl,
-%	write('4. Quitter'), nl,
-%	write('Entrer un choix: '),
-%	read(Choice), nl,
-%	handleResolution(Choice,S),
-%	Choice=4, nl.
-
 
 userSolvingSudoku :- nl, sudokuGrid(S), affS(S), nl,
 									write('1. Definir numero'), nl,
@@ -254,9 +262,8 @@ userSolvingSudoku :- nl, sudokuGrid(S), affS(S), nl,
 									write('Entrer un choix: '),
 									read(Choice), nl,
 									handleResolution(Choice,S),
-									isSudokuComplete(S), nl,
+									isProgramFinished(S,Choice), nl,
 									write('Vous avez gagné').
-
 
 
 % Definition d'un numero
@@ -279,13 +286,9 @@ handleResolution(2,S):- write('Entrer coordonnee X: '), read(X), validUserInputN
 												changer(' ',X1,Y1,S,S1),
 												retract(sudokuGrid(S)),
 												asserta(sudokuGrid(S1)),
-												deletePlayerMove([X,Y]).
+												deletePlayerMove([X,Y]),!.
 
-handleResolution(1,_):- nl, write('Echec'), nl, !, fail.
-
-
-
-
+handleResolution(_,S):- nl, write('Option invalide'), nl, !, fail.
 
 
 	%% ---AUTRES2--- %%
