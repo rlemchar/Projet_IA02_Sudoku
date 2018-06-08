@@ -213,7 +213,6 @@ Element = ' '.
 isPlayableCell(X,Y,Sudoku):- isJeuJoueur([X,Y]).
 
 
-
 	%% ---PROGRAMME PRINCIPAL--- %%
 sudoku :- repeat, menu, !.
 menu :- nl, write('====================================================='),nl,
