@@ -60,36 +60,21 @@ affS([A|B])  :- affG(A), write('-----------------'), nl, affS(B).
 
 	%% ---MODIFICATION DES VALEURS--- %%
 
-%remplacer l'Xeme element de la ligne est remplace par V
+%remplacer l'Yeme element de la ligne est remplace par V
 changer2(V,0,[_|B],[V|B]).
-changer2(V,X,[A|B],[C|D]):- X>0, X1 is (X-1), changer2(V,X1,B,D), C = A.
-changer1(V,X,[A|B],[C|D]):- X<3, changer2(V,X,A,C), D = B, !.
-changer1(V,X,[A|B],[C|D]):- X1 is (X-3), changer1(V,X1,B,D), C = A.
+changer2(V,Y,[A|B],[C|D]):- Y>0, Y1 is (Y-1), changer2(V,Y1,B,D), C = A.
+changer1(V,Y,[A|B],[C|D]):- Y<3, changer2(V,Y,A,C), D = B, !.
+changer1(V,Y,[A|B],[C|D]):- Y1 is (Y-3), changer1(V,Y1,B,D), C = A.
 
 %remplacer l'element (X,Y) par V: utiliser seulement changer(Valeur,Xcoor,Ycoor,InList,OutList)
-changer3(V,X,0,[A|B],[C|B]):- changer1(V,X,A,C).
-changer3(V,X,Y,[A|B],[C|D]):- Y>0, Y1 is (Y-1), changer3(V,X,Y1,B,D), C = A.
-changer(V,X,Y,[A|B],[C|D]):- Y<3, changer3(V,X,Y,A,C), D = B, !.
-changer(V,X,Y,[A|B],[C|D]):- Y1 is (Y-3), changer(V,X,Y1,B,D), C = A.
-
-
-% remplacer l’Yeme element de la ligne est remplace par V
-%changer2(V,0,[_|B],[V|B]).
-%changer2(V,Y,[A|B],[C|D]):- Y>0, Y1 is (Y-1), changer2(V,Y1,B,D), C = A.
-%changer1(V,Y,[A|B],[C|D]):- Y<3, changer2(V,Y,A,C), D = B, !.
-%changer1(V,Y,[A|B],[C|D]):- Y1 is (Y-3), changer1(V,Y1,B,D), C = A.
-
-% remplacer l'element (X,Y) par V: utiliser seulement changer(Valeur,Xcoor,Ycoor,InList,OutList)
-%changer3(V,Y,0,[A|B],[C|B]):- changer1(V,Y,A,C).
-%changer3(V,Y,X,[A|B],[C|D]):- X>0, X1 is (X-1), changer3(V,Y,X1,B,D), C = A.
-%changer(V,X,Y,[A|B],[C|D]):- X<3, changer3(V,Y,X,A,C), D = B, !.
-%changer(V,X,Y,[A|B],[C|D]):- X1 is (X-3), changer(V,Y,X1,B,D), C = A.
+changer3(V,0,Y,[A|B],[C|B]):- changer1(V,Y,A,C).
+changer3(V,X,Y,[A|B],[C|D]):- X>0, X1 is (X-1), changer3(V,X1,Y,B,D), C = A.
+changer(V,X,Y,[A|B],[C|D]):- X<3, changer3(V,X,Y,A,C), D = B, !.
+changer(V,X,Y,[A|B],[C|D]):- X1 is (X-3), changer(V,X1,Y,B,D), C = A.
 
 % verifier que les coordonnées entrés par l'utilisateur sont valides 1-9
-
 validUserInputNumber(X):- X>0, X=<9, integer(X), !.
-validUserInputNumber(_):- write('Saisie incorrecte'),
-													fail.
+validUserInputNumber(_):- write('Saisie incorrecte'),fail.
 
 % verifier que les coordonnées sont valides en interne 0-9
 validCoord(X):- X>=0, X=<8, integer(X), !.
@@ -102,9 +87,9 @@ getNlist([A|_],0,A).
 getNlist([_|B],X,N) :- X>=1, X1 is X-1, getNlist(B,X1,N).
 
 % recuperer les 9 elements d'un bloc dans une liste
-getBlock(_,-1,_,[]):- !.
-getBlock(X,Y,[A|B],O):- Y<0, Y1 is (Y+1), getNlist(A,X,O1), getBlock(X,Y1,B,O2), concat(O1,O2,O).
-getBlock(X,Y,I,O):- getNlist(I,Y,I1), Y1 is -4, getBlock(X,Y1,I1,O), !.
+getBlock(-1,_,_,[]):- !.
+getBlock(X,Y,[A|B],O):- X<0, X1 is (X+1), getNlist(A,Y,O1), getBlock(X1,Y,B,O2), concat(O1,O2,O).
+getBlock(X,Y,I,O):- getNlist(I,X,I1), X1 is -4, getBlock(X1,Y,I1,O), !.
 
 % recuperer les 9 elements d'une ligne dans une liste
 % Y coordonnée ligne
@@ -160,7 +145,7 @@ verification(X,Y,Sudoku):- getLine(X,Sudoku,Line),
 																verif(Column),
 																verif(Bloc).
 
-verification(X,Y,_):- write('Ajout invalide'),nl, fail.
+verification(_,_,_):- write('Ajout invalide'),nl, fail.
 
 
 % Ajout d'un élèment par l'utilisateur dans liste des cases jouées
@@ -214,7 +199,7 @@ isSudokuComplete(Sudoku):- getLine(8,Sudoku,Line),
 	sudokuComplete(7,Sudoku).
 
 % recuperer l'element à une certaine coordonée
-getElement(X,Y,Sudoku,Element):- valid(X),
+getElement(X,Y,Sudoku,Element):- validCoord(X),
 	validCoord(Y),
 	getLine(X,Sudoku,Line),
 	getNlist(Line,Y,Element).
@@ -223,8 +208,7 @@ getElement(X,Y,Sudoku,Element):- valid(X),
 isPlayableCell(X,Y,Sudoku):- getElement(X,Y,Sudoku,Element),
 Element = ' '.
 isPlayableCell(X,Y,_):- isJeuJoueur([X,Y]).
-isPlayableCell(X,Y,_):- write("Cette case n'est pas jouable"),
-												fail.
+isPlayableCell(_,_,_):- write("Cette case n'est pas jouable"),fail.
 
 	%% ===RESOLUTION SUDOKU=== %%
 
@@ -280,27 +264,29 @@ userSolvingSudoku :- nl, sudokuGrid(S), affS(S), nl,
 
 % Definition d'un numero
 handleResolution(1,S):- write('Entrer coordonnee X: '), read(X), validUserInputNumber(X),nl,
-												write('Entrer coordonnee Y: '), read(Y), validUserInputNumber(Y),nl,
-												write('Entrer numero: '), read(N), validUserInputNumber(N),
-												X1 is (X-1), Y1 is (Y-1),
-												isPlayableCell(X1,Y1,S),
-												changer(N,X1,Y1,S,S1),
-												verification(X,Y,S1),
-												retract(sudokuGrid(S)),
-												asserta(sudokuGrid(S1)),
-												addPlayerMove([X,Y]),!.
+	write('Entrer coordonnee Y: '), read(Y), validUserInputNumber(Y),nl,
+	write('Entrer numero: '), read(N), validUserInputNumber(N),
+	X1 is (X-1), Y1 is (Y-1),
+	isPlayableCell(X1,Y1,S),
+	changer(N,X1,Y1,S,S1),
+	verification(X,Y,S1),
+	retract(sudokuGrid(S)),
+	asserta(sudokuGrid(S1)),
+	addPlayerMove([X,Y]),!.
+handleResolution(1,_):- !, fail.
 
 %Effacer un numero
 handleResolution(2,S):- write('Entrer coordonnee X: '), read(X), validUserInputNumber(X),nl,
-												write('Entrer coordonnee Y: '), read(Y), validUserInputNumber(Y),nl,
-												X1 is (X-1), Y1 is (Y-1),
-												isPlayableCell(X1,Y1,S),
-												changer(' ',X1,Y1,S,S1),
-												retract(sudokuGrid(S)),
-												asserta(sudokuGrid(S1)),
-												deletePlayerMove([X,Y]),!.
+	write('Entrer coordonnee Y: '), read(Y), validUserInputNumber(Y),nl,
+	X1 is (X-1), Y1 is (Y-1),
+	isPlayableCell(X1,Y1,S),
+	changer(' ',X1,Y1,S,S1),
+	retract(sudokuGrid(S)),
+	asserta(sudokuGrid(S1)),
+	deletePlayerMove([X,Y]),!.
+handleResolution(2,_):- !, fail.
 
-handleResolution(_,S):- nl, write('Option invalide'), nl, !, fail.
+handleResolution(_,_):- nl, write('Option invalide'), nl, !, fail.
 
 
 	%% ---AUTRES2--- %%
