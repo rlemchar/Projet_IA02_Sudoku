@@ -231,7 +231,7 @@ isPlayableCell(X,Y,_):- write("Cette case n'est pas jouable"),
 % Ajouter un numero random dans un sudoku ajouterRand(InSudoku,OutSudoku)
 ajouterRand(I,O1):- repeat, X is random(0,9), repeat , Y is random(0,9), getElement(X,Y,I,' '), repeat, N is random(0,9),
 	changer(X,Y,N,I,O), verificationInput(X,Y,O), O1=O.
-	
+
 % resoudre un sudoku
 completerSudoku(I,O):- ajouterRand(I,O1), completerSudoku(O1,O).
 
