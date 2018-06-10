@@ -24,6 +24,16 @@ sudokuTest([[[[9,2,8],[4,1,7],[6,5,3]],
 			[[3,4,7],[' ',6,9],[8,1,5]],
 			[[5,6,9],[8,3,1],[4,7,2]]]]).
 
+			sudokuComplet([[[[9,2,8],[4,1,7],[6,5,3]],
+						[[6,3,1],[5,9,2],[7,4,8]],
+						[[7,5,4],[6,8,3],[1,2,9]]],
+						[[[4,9,5],[3,7,6],[2,8,1]],
+						[[1,7,3],[9,2,8],[5,6,4]],
+						[[2,8,6],[1,4,5],[3,9,7]]],
+						[[[8,1,2],[7,5,4],[9,3,6]],
+						[[3,4,7],[2,6,9],[8,1,5]],
+						[[5,6,9],[8,3,1],[4,7,2]]]]).
+
 non(A) :- A, !, fail.
 non(_).
 
@@ -249,7 +259,8 @@ userSolvingSudoku :- nl,write('---- Complétez le sudoku ----'),nl,nl,
 	write('Que voulez-vous faire ? : '),
 	read(Choice), nl,
 	handleResolution(Choice,S),
-	isProgramFinished(S,Choice).
+	sudokuGrid(ModifiedGrid),
+	isProgramFinished(ModifiedGrid,Choice).
 
 % Definir d'un numero
 handleResolution(1,S):- write('Ligne de la case à modifier : '), read(X), validUserInputNumber(X),nl,
