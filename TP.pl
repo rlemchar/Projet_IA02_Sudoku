@@ -34,6 +34,17 @@ sudokuTest([[[[9,2,8],[4,1,7],[6,5,3]],
 						[[3,4,7],[2,6,9],[8,1,5]],
 						[[5,6,9],[8,3,1],[4,7,2]]]]).
 
+
+sudokuEmpty([[[[' ',' ',' '],[' ',' ',' '],[' ',' ',' ']],
+[[' ',' ',' '],[' ',' ',' '],[' ',' ',' ']],
+[[' ',' ',' '],[' ',' ',' '],[' ',' ',' ']]],
+[[[' ',' ',' '],[' ',' ',' '],[' ',' ',' ']],
+[[' ',' ',' '],[' ',' ',' '],[' ',' ',' ']],
+[[' ',' ',' '],[' ',' ',' '],[' ',' ',' ']]],
+[[[' ',' ',' '],[' ',' ',' '],[' ',' ',' ']],
+[[' ',' ',' '],[' ',' ',' '],[' ',' ',' ']],
+[[' ',' ',' '],[' ',' ',' '],[' ',' ',' ']]]]).
+
 non(A) :- A, !, fail.
 non(_).
 
@@ -221,9 +232,13 @@ ajouterRand(I,O1):- repeat, X is random(0,9), repeat , Y is random(0,9), getElem
 % resoudre un sudoku
 completerSudoku(I,O):- ajouterRand(I,O1), completerSudoku(O1,O).
 
-% Verifier si le programme doit finir
-isProgramFinished(Sudoku,_):- isSudokuComplete(Sudoku), write('Vous avez gagné !'),nl,!.
-isProgramFinished(_,Choice):- Choice = 4.
+% Verifier si la resolution est terminée (choix 4 ou sudoku complet)
+isSolvingFinished(Sudoku,_):- isSudokuComplete(Sudoku), write('Vous avez gagné !'),nl,!.
+isSolvingFinished(_,Choice):- Choice = 3.
+
+% Verifier si la proposition de sudoku est terminée (choix 3 ou 4)
+isPropositionFinished(Choice):- Choice = 3,!.
+isPropositionFinished(Choice):- Choice = 4.
 
 	%% ===PROGRAMME PRINCIPAL=== %%
 
@@ -247,20 +262,29 @@ handle(1):- write('---- RESOLUTION D\'UN SUDOKU ----'),nl,
 						asserta(sudokuGrid(S)),
 						repeat,
 						userSolvingSudoku, !.
-handle(2):- write('---- PROPOSER UN SUDOKU ----'), nl, !.
+handle(2):- write('---- PROPOSER UN SUDOKU ----'), nl,
+						sudokuEmpty(S),
+						asserta(newSudokuProposedByUser(S)),
+						repeat,
+						obtainSudokuFromUser,!.
 handle(4):- write('---- Au revoir ! ----'),!.
 handle(_):- write('---- Option invalide ----'),!.
 
+
+% --------------------------------------------------------------
+% ----------- 		Resolution d'un sudoku 	--------------------
+% --------------------------------------------------------------
+
 userSolvingSudoku :- nl,write('---- Complétez le sudoku ----'),nl,nl,
  	sudokuGrid(S), affS(S), nl,
-	write('1. Definir numero'), nl,
-	write('2. Effacer numero'), nl,
-	write('4. Quitter'), nl, nl,
+	write('1. Definir un numero'), nl,
+	write('2. Effacer un numero'), nl,
+	write('3. Quitter'), nl, nl,
 	write('Que voulez-vous faire ? : '),
 	read(Choice), nl,
 	handleResolution(Choice,S),
 	sudokuGrid(ModifiedGrid),
-	isProgramFinished(ModifiedGrid,Choice).
+	isSolvingFinished(ModifiedGrid,Choice).
 
 % Definir d'un numero
 handleResolution(1,S):- write('Ligne de la case à modifier : '), read(X), validUserInputNumber(X),nl,
@@ -290,10 +314,56 @@ handleResolution(2,S):- write('Ligne de la case à effacer :'), read(X), validUs
 
 handleResolution(2,_):- !.
 
-handleResolution(4,_):-!.
+handleResolution(3,_):-!.
 
 handleResolution(_,_):- nl, write('Option invalide'), nl, !, fail.
 
+% --------------------------------------------------------------
+% ----------- 		Proposition d'un sudoku 	--------------------
+% --------------------------------------------------------------
+
+obtainSudokuFromUser :- nl,write('---- Modifiez le sudoku à soumettre à l\'ordinateur ----'),nl,nl,
+ 	newSudokuProposedByUser(S), affS(S), nl,
+	write('1. Ajouter un numero'), nl,
+	write('2. Effacer un numero'), nl,
+	write('3. Valider et soumettre le sudoku'), nl,
+	write('4. Quitter'), nl, nl,
+	write('Que voulez-vous faire ? : '),
+	read(Choice), nl,
+	handleProposition(Choice,S),
+	isPropositionFinished(Choice).
+
+	% Ajouter un numero
+	handleProposition(1,S):- write('Ligne de la case à modifier : '), read(X), validUserInputNumber(X),nl,
+		write('Colonne de la case à modifier :'), read(Y), validUserInputNumber(Y),nl,
+		write('Valeur de la case : '), read(N), validUserInputNumber(N),nl,
+		X1 is (X-1), Y1 is (Y-1),
+		changer(N,X1,Y1,S,S1),
+		retract(newSudokuProposedByUser(S)),
+		asserta(newSudokuProposedByUser(S1)),
+		write('Numero ajouté'),nl,nl,!.
+
+	handleProposition(1,_):- !.
+
+	% Effacer un numero
+	handleProposition(2,S):- write('Ligne de la case à effacer :'), read(X), validUserInputNumber(X),nl,
+		write('Colonne de la case à effacer:'), read(Y), validUserInputNumber(Y),nl,
+		X1 is (X-1), Y1 is (Y-1),
+		changer(' ',X1,Y1,S,S1),
+		retract(newSudokuProposedByUser(S)),
+		asserta(newSudokuProposedByUser(S1)),
+		write('Numero supprimé'),nl,nl,!.
+
+	handleProposition(2,_):- !.
+
+	% Effacer un numero
+	handleProposition(3,S):- write('Sudoku validé'),nl, affS(S).
+
+	handleProposition(3,_):- !.
+
+	handleProposition(4,_):-!.
+
+	handleProposition(_,_):- nl, write('Option invalide'), nl, !, fail.
 
 	%% ---AUTRES2--- %%
 
