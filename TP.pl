@@ -169,10 +169,14 @@ addPlayerMove(Coord):- current_predicate(jeuxJoueur/1), !,
 addPlayerMove(Coord):- asserta(jeuxJoueur([Coord])).
 
 % Lorsque case est effacée
-deleteFromList(X,[T|Q],Output):- X = T, Output = Q.
-deleteFromList(X,[T|Q],Output):- X \= T,
-	deleteFromList(X,Q,RestOfList),
-	concat(T,RestOfList,Output).
+% deleteFromList(X,[T|Q],Output):- X = T, Output = Q.
+% deleteFromList(X,[T|Q],Output):- X \= T,
+%	deleteFromList(X,Q,RestOfList),
+%	concat(T,RestOfList,Output).
+
+deleteFromList(_,[],[]).
+deleteFromList(X,[X|Q],Output):- deleteFromList(X,Q,Output).
+deleteFromList(X,[T|Q],[T|RestOfList]):- deleteFromList(X,Q,RestOfList).
 
 deletePlayerMove(Coord):- isJeuJoueur(Coord),
 	jeuxJoueur(X),
@@ -226,11 +230,34 @@ isCellCompleted(_,_,_):- write('Cette case est deja vide.'),nl,fail.
 	%% ===RESOLUTION SUDOKU=== %%
 
 % Ajouter un numero random dans un sudoku ajouterRand(InSudoku,OutSudoku)
-ajouterRand(I,O1):- repeat, X is random(0,9), repeat , Y is random(0,9), getElement(X,Y,I,' '), repeat, N is random(0,9),
-	changer(X,Y,N,I,O), verificationInput(X,Y,O), O1=O.
-
+ajouterRand(I,O1):- repeat, random(0,9,X), repeat , random(0,9,Y), getElement(X,Y,I,' '),
+	repeat, random(0,9,N), changer(X,Y,N,I,O), verification(X,Y,O), O1=O.
+	
 % resoudre un sudoku
-completerSudoku(I,O):- ajouterRand(I,O1), completerSudoku(O1,O).
+setPossibles4([],[]).
+setPossibles4([' '|B],[[1,2,3,4,5,6,7,8,9]|D]):- setPossibles4(B,D).
+setPossibles4([A|B],[A|D]):- setPossibles4(B,D).
+
+setPossibles3([],[]).
+setPossibles3([A|B],[C|D]):- setPossibles4(A,C), setPossibles3(B,D).
+
+setPossibles2([],[]).
+setPossibles2([A|B],[C|D]):- setPossibles3(A,C), setPossibles2(B,D).
+
+setPossibles([],[]).
+setPossibles([A|B],[C|D]):- setPossibles2(A,C), setPossibles(B,D).
+
+% eliminer tous les elements de la liste E presents dans la liste In: deleteTouteListe(In,E,Out)
+deleteTouteListe([A|[]],[],A):- !.
+deleteTouteListe(I,[],I).
+deleteTouteListe(I,[A|B],O):- deleteFromList(A,I,O1), deleteTouteListe(O1,B,O),!.
+
+%% reduire la liste de posibles en fonctions des numeros dans la ligne, la colonne, et le block
+reduirePossibles(X,Y,I,O):- Xblock is floor(X/3), Yblock is (Y/3), getBlock(X,Y,I,Block),
+	getLine(X,I,Line), getColumn(Y,I,Column), deleteTouteListe(I,Block,O1), 
+	deleteTouteListe(O1,Line,O2), deleteTouteListe(O2,Column,O).
+	
+completerSudoku(I,O).
 
 % Verifier si la resolution est terminée (choix 4 ou sudoku complet)
 isSolvingFinished(Sudoku,_):- isSudokuComplete(Sudoku), write('Vous avez gagné !'),nl,!.
