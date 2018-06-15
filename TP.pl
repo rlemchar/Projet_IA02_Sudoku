@@ -357,7 +357,7 @@ obtainSudokuFromUser :- nl,write('---- Modifiez le sudoku à soumettre à l\'ord
 	handleProposition(2,_):- !.
 
 	% Effacer un numero
-	handleProposition(3,S):- write('Sudoku validé'),nl, affS(S).
+	handleProposition(3,S):- write('Sudoku validé'),nl,nl, affS(S).
 
 	handleProposition(3,_):- !.
 
