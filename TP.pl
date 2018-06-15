@@ -237,10 +237,10 @@ isPropositionFinished(Choice):- Choice = 4.
 	%% ===RESOLUTION SUDOKU PAR L'ORDINATEUR === %%
 
 % Ajouter un numero random dans un sudoku ajouterRand(InSudoku,OutSudoku)
-ajouterRand(I,O1):- repeat, random(0,9,X), repeat , random(0,9,Y), getElement(X,Y,I,' '),
-	repeat, random(0,9,N), changer(X,Y,N,I,O), verification(X,Y,O), O1=O.
+%ajouterRand(I,O1):- repeat, random(0,9,X), repeat , random(0,9,Y), getElement(X,Y,I,' '),
+	%repeat, random(0,9,N), changer(X,Y,N,I,O), verification(X,Y,O), O1=O.
 
-% resoudre un sudoku
+% On associe à chaque case vide une liste des possibles avec toutes les valeurs
 setPossibles4([],[]).
 setPossibles4([' '|B],[[1,2,3,4,5,6,7,8,9]|D]):- setPossibles4(B,D).
 setPossibles4([A|B],[A|D]):- setPossibles4(B,D).
@@ -367,6 +367,7 @@ obtainSudokuFromUser :- nl,write('---- Modifiez le sudoku à soumettre à l\'ord
 		write('Valeur de la case : '), read(N), validUserInputNumber(N),nl,
 		X1 is (X-1), Y1 is (Y-1),
 		changer(N,X1,Y1,S,S1),
+		verification(X1,Y1,S1),
 		retract(newSudokuProposedByUser(S)),
 		asserta(newSudokuProposedByUser(S1)),
 		write('Numero ajouté'),nl,nl,!.
