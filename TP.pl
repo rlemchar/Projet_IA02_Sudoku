@@ -225,14 +225,21 @@ isCellCompleted(X,Y,Sudoku):- getElement(X,Y,Sudoku,Element),
 													Element \= ' ',!.
 isCellCompleted(_,_,_):- write('Cette case est deja vide.'),nl,fail.
 
+% Verifier si la resolution est terminée (choix 4 ou sudoku complet)
+isSolvingFinished(Sudoku,_):- isSudokuComplete(Sudoku), write('Vous avez gagné !'),nl,!.
+isSolvingFinished(_,Choice):- Choice = 3.
+
+% Verifier si la proposition de sudoku est terminée (choix 3 ou 4)
+isPropositionFinished(Choice):- Choice = 3,!.
+isPropositionFinished(Choice):- Choice = 4.
 
 
-	%% ===RESOLUTION SUDOKU=== %%
+	%% ===RESOLUTION SUDOKU PAR L'ORDINATEUR === %%
 
 % Ajouter un numero random dans un sudoku ajouterRand(InSudoku,OutSudoku)
 ajouterRand(I,O1):- repeat, random(0,9,X), repeat , random(0,9,Y), getElement(X,Y,I,' '),
 	repeat, random(0,9,N), changer(X,Y,N,I,O), verification(X,Y,O), O1=O.
-	
+
 % resoudre un sudoku
 setPossibles4([],[]).
 setPossibles4([' '|B],[[1,2,3,4,5,6,7,8,9]|D]):- setPossibles4(B,D).
@@ -254,18 +261,12 @@ deleteTouteListe(I,[A|B],O):- deleteFromList(A,I,O1), deleteTouteListe(O1,B,O),!
 
 %% reduire la liste de posibles en fonctions des numeros dans la ligne, la colonne, et le block
 reduirePossibles(X,Y,I,O):- Xblock is floor(X/3), Yblock is (Y/3), getBlock(X,Y,I,Block),
-	getLine(X,I,Line), getColumn(Y,I,Column), deleteTouteListe(I,Block,O1), 
+	getLine(X,I,Line), getColumn(Y,I,Column), deleteTouteListe(I,Block,O1),
 	deleteTouteListe(O1,Line,O2), deleteTouteListe(O2,Column,O).
-	
+
 completerSudoku(I,O).
 
-% Verifier si la resolution est terminée (choix 4 ou sudoku complet)
-isSolvingFinished(Sudoku,_):- isSudokuComplete(Sudoku), write('Vous avez gagné !'),nl,!.
-isSolvingFinished(_,Choice):- Choice = 3.
 
-% Verifier si la proposition de sudoku est terminée (choix 3 ou 4)
-isPropositionFinished(Choice):- Choice = 3,!.
-isPropositionFinished(Choice):- Choice = 4.
 
 	%% ===PROGRAMME PRINCIPAL=== %%
 
