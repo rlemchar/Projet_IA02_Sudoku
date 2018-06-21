@@ -11,8 +11,8 @@ sudokuInitial([[[[9,' ',8],[' ',1,7],[' ',5,' ']],
 				[[' ',7,3],[9,' ',8],[5,6,' ']],
 				[[2,8,6],[' ',4,' '],[' ',' ',' ']]],
 			   [[[' ',' ',' '],[' ',' ',4],[9,' ',' ']],
-				[[3,' ',7],[' ',6,9],[' ',' ',' ']],
-				[[' ',6,' '],[8,3,' '],[4,' ',' ']]]]).
+				[[' ',' ',7],[' ',6,9],[' ',' ',' ']],
+				[[' ',6,' '],[' ',3,' '],[4,' ',' ']]]]).
 
 sudokuTest([[[[9,' ',8],[4,1,7],[6,5,' ']],
 			[[6,' ',1],[5,9,2],[7,4,8]],
@@ -259,7 +259,7 @@ setPossibles([A|B],[C|D]):- setPossibles2(A,C), setPossibles(B,D),!.
 
 % on associe à chaque case vides une liste de possibles et on garde ses coordonnees (predicat casesVides([[X,Y],[X1,Y1],...]).)
 ajouterPossibles4([],[],_,_).
-ajouterPossibles4([' '|B],[[1,2,3,4,5,6,7,8,9]|D],X,Y):- casesVides(L), concat(L,[[X,Y,1]],L1), 
+ajouterPossibles4([' '|B],[[1,2,3,4,5,6,7,8,9]|D],X,Y):- casesVides(L), concat(L,[[X,Y,2]],L1), 
 	retract(casesVides(_)), asserta(casesVides(L1)), Y1 is (Y+1), ajouterPossibles4(B,D,X,Y1).
 ajouterPossibles4([A|B],[A|D],X,Y):- Y1 is (Y+1), ajouterPossibles4(B,D,X,Y1).
 
@@ -272,7 +272,7 @@ ajouterPossibles2([A|B],[C|D],X):- ajouterPossibles3(A,C,X,0), X1 is (X+1), ajou
 ajouterPossibles([],[],_).
 ajouterPossibles([A|B],[C|D],X):- ajouterPossibles2(A,C,X), X1 is (X+3), ajouterPossibles(B,D,X1),!.
 
-ajouterPossibles(I,O):- asserta(casesVides([])), ajouterPossibles(I,O,0).
+ajouterPossibles(I,O):- retractall(casesVides(_)), assertz(casesVides([])), ajouterPossibles(I,O,0).
 
 % eliminer tous les elements de la liste E presents dans la liste In: deleteTouteListe(In,E,Out)
 deleteTouteListe([A|[]],_,A):- !.
@@ -297,11 +297,14 @@ reduirePossibles(X,Y,I,O):- reduireColonne(X,Y,I,O1), reduireLigne(X,Y,O1,O2), r
 
 % verifier si un changement va etre effectue dans la listes des possibles isChanged(In,Out,X,Y,OldVal,NewVal,Changed)
 %% si la liste est reduite a 1 chiffre la case est eliminee de la liste de cases vides, si elle est reduite la
-%% case est concatenée dans la fin de la liste avec valeur 1, sinon elle est concatenée au debut avec valeur 0
-isChanged(X,Y,Val,Val):- casesVides(L), deleteFromList([X,Y,_],L,L1), retract(casesVides(_)), 
-	concat([[X,Y,0]],L1,L2), asserta(casesVides(L2)), !.
+%% case est concatenée dans la fin de la liste avec valeur 2, sinon elle est concatenée au debut avec valeur 1 puis 0
+unchanged(2,1).
+unchanged(_,0).
+
+isChanged(X,Y,Val,Val):- casesVides(L), deleteFromList([X,Y,N],L,L1), retract(casesVides(_)), unchanged(N,N1),
+	concat([[X,Y,N1]],L1,L2), asserta(casesVides(L2)), !.
 isChanged(X,Y,_,Val):- isList(Val), casesVides(L), deleteFromList([X,Y,_],L,L1), retract(casesVides(_)), 
-	concat(L1,[[X,Y,1]],L2), asserta(casesVides(L2)).
+	concat(L1,[[X,Y,2]],L2), asserta(casesVides(L2)).
 isChanged(X,Y,_,_):- casesVides(L), deleteFromList([X,Y,_],L,L1), retract(casesVides(_)), asserta(casesVides(L1)), write('('), write(X), write(';'), write(Y), write(')').
 
 % reduire la liste de possibles en modifiant casesVides()
@@ -320,18 +323,32 @@ completer(I,I,[]).
 completer(I,O,[[X|[Y|_]]|Q]):- reducePossibles(X,Y,I,O1), completer(O1,O,Q).
 
 % verifier si les cases vides ont change
+%inLoop([]).
+%inLoop([[_|[_|[1|_]]]|_]):- !, fail.
+%inLoop([_|Q]):- inLoop(Q).
+
 inLoop([]).
-inLoop([[_|[_|[1|_]]]|_]):- !, fail.
+inLoop([[_,_,1]|_]):- !, fail.
+inLoop([[_,_,2]|_]):- !, fail.
 inLoop([_|Q]):- inLoop(Q).
 
 % complete toutes les cases à valeurs determinables, Fin=1 si le sudoku est complet, Fin=0 si il faut faire un choix
 %% ne pas oublier de faire un retract(casesVides(_)) après!!
 completerSudoku1(I,I,1):- isSudokuComplete(I), !.
-completerSudoku1(I,I,0):- casesVides(L), inLoop(L).
+completerSudoku1(I,I,0):- casesVides(L), inLoop(L), !.
 completerSudoku1(I,O,Fin):- casesVides(L), write('-'), completer(I,O1,L), nl, completerSudoku1(O1,O,Fin).
 completerSudoku(I,O,Fin):- ajouterPossibles(I,O1), completerSudoku1(O1,O,Fin).
 
+randChoix(I,O):- casesVides([[X,Y,_]|[[X1,Y1,_]|Q]]), getElement(X,Y,I,[T|_]), changer(T,X,Y,I,O), retract(casesVides(_)), concat([[X1,Y1,1]],Q,L), asserta(casesVides(L)). 
 
+resoudreSudoku1(I,O):- casesVides(Prev), write(Prev), nl, completerSudoku1(I,O1,Fin), casesVides(Post), retract(casesVides(Post)), asserta(casesVides(Prev)), Fin=1, O=O1, !.
+resoudreSudoku1(I,O):- completerSudoku1(I,O1,_), randChoix(O1,O2), casesVides(L), write(L), nl, resoudreSudoku1(O2,O).
+resoudreSudoku(I,O):- ajouterPossibles(I,O1), resoudreSudoku1(O1,O).
+
+%resoudreSudoku1(I,O):- casesVides(Prev), write(Prev), nl, completerSudoku1(I,O1,Fin), casesVides(Post), retract(casesVides(Post)), asserta(casesVides(Prev)), 
+%	Fin=0, retract(casesVides(Prev)), asserta(casesVides(Post)), !, randChoix(O1,O2), write(Post), nl, resoudreSudoku1(O2,O).
+%resoudreSudoku1(I,O):- completerSudoku1(I,O,1), !.
+%resoudreSudoku(I,O):- ajouterPossibles(I,O1), resoudreSudoku1(O1,O).
 
 	%% ===PROGRAMME PRINCIPAL=== %%
 
