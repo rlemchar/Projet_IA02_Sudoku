@@ -5,18 +5,18 @@
 	%% ---AUTRES--- %%
 
 sudokuInitial([[[[9,' ',8],[' ',1,7],[' ',5,' ']],
-			[[' ',' ',' '],[5,9,' '],[7,' ',8]],
-			[[' ',' ',4],[6,' ',' '],[' ',' ',' ']]],
-			[[[' ',' ',' '],[' ',7,' '],[2,8,1]],
-			[[' ',7,3],[9,' ',8],[5,6,' ']],
-			[[2,8,6],[' ',4,' '],[' ',' ',' ']]],
-			[[[' ',' ',' '],[' ',' ',4],[9,' ',' ']],
-			[[3,' ',7],[' ',6,9],[' ',' ',' ']],
-			[[' ',6,' '],[8,3,' '],[4,' ',2]]]]).
+			    [[' ',' ',' '],[5,9,' '],[7,' ',8]],
+				[[' ',' ',4],[6,' ',' '],[' ',' ',' ']]],
+			   [[[' ',' ',' '],[' ',7,' '],[2,8,1]],
+				[[' ',7,3],[9,' ',8],[5,6,' ']],
+				[[2,8,6],[' ',4,' '],[' ',' ',' ']]],
+			   [[[' ',' ',' '],[' ',' ',4],[9,' ',' ']],
+				[[3,' ',7],[' ',6,9],[' ',' ',' ']],
+				[[' ',6,' '],[8,3,' '],[4,' ',' ']]]]).
 
 sudokuTest([[[[9,' ',8],[4,1,7],[6,5,' ']],
-			[[6,3,1],[5,9,2],[7,4,8]],
-			[[7,5,4],[6,8,3],[1,2,9]]],
+			[[6,' ',1],[5,9,2],[7,4,8]],
+			[[7,5,4],[6,8,3],[1,' ',9]]],
 			[[[4,9,5],[3,7,6],[2,8,1]],
 			[[1,7,3],[9,2,8],[5,6,' ']],
 			[[2,8,6],[1,4,5],[3,9,7]]],
@@ -193,7 +193,10 @@ isJeuJoueur(Coord):- current_predicate(jeuxJoueur/1),
 
 % predicat intermediaire pr savoir si une liste est complete
 listComplete([]).
-listComplete([T|Q]):- (T\=' '),!,listComplete(Q).
+%listComplete([T|Q]):- (T\=' '),!,listComplete(Q).
+listComplete([' '|_]):- !, fail.
+listComplete([T|_]):- isList(T), !, fail.
+listComplete([_|Q]):- listComplete(Q).
 
 % sudoku complet
 isSudokuComplete(-1,_):-!.
@@ -254,13 +257,30 @@ setPossibles2([A|B],[C|D]):- setPossibles3(A,C), setPossibles2(B,D).
 setPossibles([],[]).
 setPossibles([A|B],[C|D]):- setPossibles2(A,C), setPossibles(B,D),!.
 
+% on associe à chaque case vides une liste de possibles et on garde ses coordonnees (predicat casesVides([[X,Y],[X1,Y1],...]).)
+ajouterPossibles4([],[],_,_).
+ajouterPossibles4([' '|B],[[1,2,3,4,5,6,7,8,9]|D],X,Y):- casesVides(L), concat(L,[[X,Y,1]],L1), 
+	retract(casesVides(_)), asserta(casesVides(L1)), Y1 is (Y+1), ajouterPossibles4(B,D,X,Y1).
+ajouterPossibles4([A|B],[A|D],X,Y):- Y1 is (Y+1), ajouterPossibles4(B,D,X,Y1).
+
+ajouterPossibles3([],[],_,_).
+ajouterPossibles3([A|B],[C|D],X,Y):- ajouterPossibles4(A,C,X,Y), Y1 is (Y+3), ajouterPossibles3(B,D,X,Y1).
+
+ajouterPossibles2([],[],_).
+ajouterPossibles2([A|B],[C|D],X):- ajouterPossibles3(A,C,X,0), X1 is (X+1), ajouterPossibles2(B,D,X1).
+
+ajouterPossibles([],[],_).
+ajouterPossibles([A|B],[C|D],X):- ajouterPossibles2(A,C,X), X1 is (X+3), ajouterPossibles(B,D,X1),!.
+
+ajouterPossibles(I,O):- asserta(casesVides([])), ajouterPossibles(I,O,0).
+
 % eliminer tous les elements de la liste E presents dans la liste In: deleteTouteListe(In,E,Out)
 deleteTouteListe([A|[]],_,A):- !.
 % deleteTouteListe([A|[]],_,[A]):- !.
 deleteTouteListe(I,[],I):- !.
 deleteTouteListe(I,[A|B],O):- deleteFromList(A,I,O1), deleteTouteListe(O1,B,O),!.
 
-%% reduire la liste de posibles en fonctions des numeros dans la colonne, la ligne, et le block
+% reduire la liste de posibles en fonctions des numeros dans la colonne, la ligne, et le block
 reduireColonne(X,Y,I,O):- getElement(X,Y,I,CurrentList), isList(CurrentList), getColumn(Y,I,Column), deleteFromList(CurrentList,Column,Column2),
 	deleteTouteListe(CurrentList,Column2,O1), changer(O1,X,Y,I,O), !.
 reduireColonne(_,_,I,I).
@@ -274,6 +294,20 @@ reduireBlock(X,Y,I,O):- getElement(X,Y,I,CurrentList), isList(CurrentList), Xblo
 reduireBlock(_,_,I,I).
 
 reduirePossibles(X,Y,I,O):- reduireColonne(X,Y,I,O1), reduireLigne(X,Y,O1,O2), reduireBlock(X,Y,O2,O).
+
+% verifier si un changement va etre effectue dans la listes des possibles isChanged(In,Out,X,Y,OldVal,NewVal,Changed)
+%% si la liste est reduite a 1 chiffre la case est eliminee de la liste de cases vides, si elle est reduite la
+%% case est concatenée dans la fin de la liste avec valeur 1, sinon elle est concatenée au debut avec valeur 0
+isChanged(X,Y,Val,Val):- casesVides(L), deleteFromList([X,Y,_],L,L1), retract(casesVides(_)), 
+	concat([[X,Y,0]],L1,L2), asserta(casesVides(L2)), !.
+isChanged(X,Y,_,Val):- isList(Val), casesVides(L), deleteFromList([X,Y,_],L,L1), retract(casesVides(_)), 
+	concat(L1,[[X,Y,1]],L2), asserta(casesVides(L2)).
+isChanged(X,Y,_,_):- casesVides(L), deleteFromList([X,Y,_],L,L1), retract(casesVides(_)), asserta(casesVides(L1)), write('('), write(X), write(';'), write(Y), write(')').
+
+% reduire la liste de possibles en modifiant casesVides()
+reducePossibles(X,Y,I,O):- getElement(X,Y,I,OldValue), isList(OldValue), reduireColonne(X,Y,I,O1), reduireLigne(X,Y,O1,O2), reduireBlock(X,Y,O2,O),
+	getElement(X,Y,O,NewValue), isChanged(X,Y,OldValue,NewValue), !.
+reducePossibles(_,_,I,I).
 	
 % reduirePossibles(X,Y,I,O):-  Xblock is floor(X/3), Yblock is floor(Y/3), getElement(X,Y,I,CurrentList), 
 % 	getBlock(Xblock,Yblock,I,Block), deleteFromList(CurrentList,Block,Block2), deleteTouteListe(CurrentList,Block2,O1), 
@@ -281,7 +315,21 @@ reduirePossibles(X,Y,I,O):- reduireColonne(X,Y,I,O1), reduireLigne(X,Y,O1,O2), r
 %	getColumn(Y,I,Column), deleteFromList(CurrentList, Column, Column2), deleteTouteListe(O2,Column2,O3),
 %	changer(O3,X,Y,I,O).
 
-completerSudoku(I,O).
+% completer une case vide tant qu il exite une liste de possibles pouvant etre reduite a 1 chiffre : completer(I,O,CasesVides)
+completer(I,I,[]).
+completer(I,O,[[X|[Y|_]]|Q]):- reducePossibles(X,Y,I,O1), completer(O1,O,Q).
+
+% verifier si les cases vides ont change
+inLoop([]).
+inLoop([[_|[_|[1|_]]]|_]):- !, fail.
+inLoop([_|Q]):- inLoop(Q).
+
+% complete toutes les cases à valeurs determinables, Fin=1 si le sudoku est complet, Fin=0 si il faut faire un choix
+%% ne pas oublier de faire un retract(casesVides(_)) après!!
+completerSudoku1(I,I,1):- isSudokuComplete(I), !.
+completerSudoku1(I,I,0):- casesVides(L), inLoop(L).
+completerSudoku1(I,O,Fin):- casesVides(L), write('-'), completer(I,O1,L), nl, completerSudoku1(O1,O,Fin).
+completerSudoku(I,O,Fin):- ajouterPossibles(I,O1), completerSudoku1(O1,O,Fin).
 
 
 
