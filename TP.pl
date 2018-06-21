@@ -266,6 +266,65 @@ reduirePossibles(X,Y,I,O):- Xblock is floor(X/3), Yblock is (Y/3), getBlock(X,Y,
 
 completerSudoku(I,O).
 
+%% Generation aléatoire de sudoku
+
+createRandomGrid:- sudokuEmpty(S),
+									 setPossibles(S,GrilleDesPossibles),
+									 iterateToCreateGrid(GrilleDesPossibles,CompleteGrid),
+									 affS(CompleteGrid).
+
+
+
+iterateToCreateGrid(GrilleDesPossibles,Result):-iterateToCreateGrid(0,0,GrilleDesPossibles,Result).
+
+iterateToCreateGrid(9,9,GrilleDesPossibles,Result):- reduirePossibles(X,Y,GrilleDesPossibles,Res),
+																											getElement(X,Y,Res,ListeDesPossibles),
+																											randomInListeDesPossibles(ListeDesPossibles, ChoosenElement),
+																											changer(ChoosenElement,X,Y,GrilleDesPossibles,Result),!.
+
+
+iterateToCreateGrid(X,Y,GrilleDesPossibles,Result):- write('etape write1'),nl,
+	write('X= '),write(X),nl,
+	write('etape write 2'),nl,
+																											write('Y= '),write(Y),nl,
+																											write('etape 0'),nl,
+																											reduirePossibles(X,Y,GrilleDesPossibles,Res),
+																											write('etape 1'),nl,
+																											getElement(X,Y,Res,ListeDesPossibles),
+																											write('etape 2'),nl,
+																											randomInListeDesPossibles(ListeDesPossibles, ChoosenElement),
+																											write('etape 3'),nl,
+																											changer(ChoosenElement,X,Y,GrilleDesPossibles,NewGrilleDesPossibles),
+																											write('etape 4'),nl,
+																											nextCoordinatesForIteration(X,Y,X1,Y1),
+																											write('etape 5'),nl,
+																											write('X1= '),write(X1),nl,
+																											write('etape 6'),nl,
+																											write('Y1= '),write(Y1),nl,
+																											write('etape 7'),nl,
+																											iterateToCreateGrid(X1,Y1,NewGrilleDesPossibles,Result).
+
+
+
+%takeOffRandomCells(Sudoku, Result).
+
+nextCoordinatesForIteration(8,8,8,8):- fail,!.
+nextCoordinatesForIteration(OldX,OldY,NewX,NewY):- OldY =:= 8,
+																											NewX is OldX+1,
+																											NewY is 0,!.
+nextCoordinatesForIteration(OldX,OldY,NewX,NewY):- NewY is OldY+1,
+																											NewX is OldX.
+
+
+randomInListeDesPossibles(Liste, ChoosenElement):-  listLength(Liste,IndexMax),
+																													random(0,IndexMax,RandomIndex),
+																													getNlist(Liste,RandomIndex,ChoosenElement).
+
+
+listLength([],0).
+listLength([_|Q],Length):- listLength(Q,LengthOfTheRest),
+											 Length is LengthOfTheRest+1.
+
 
 
 	%% ===PROGRAMME PRINCIPAL=== %%
