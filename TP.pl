@@ -14,15 +14,15 @@ sudokuInitial([[[[9,' ',8],[' ',1,7],[' ',5,' ']],
 			[[3,' ',7],[' ',6,9],[' ',' ',' ']],
 			[[' ',6,' '],[8,3,' '],[4,' ',2]]]]).
 
-sudokuTest([[[[9,2,8],[4,1,7],[6,5,3]],
+sudokuTest([[[[9,' ',8],[4,1,7],[6,5,' ']],
 			[[6,3,1],[5,9,2],[7,4,8]],
-			[[7,5,4],[6,8,3],[1,' ',9]]],
+			[[7,5,4],[6,8,3],[1,2,9]]],
 			[[[4,9,5],[3,7,6],[2,8,1]],
-			[[1,7,3],[9,2,8],[5,6,4]],
+			[[1,7,3],[9,2,8],[5,6,' ']],
 			[[2,8,6],[1,4,5],[3,9,7]]],
 			[[[8,1,2],[7,5,4],[9,3,6]],
-			[[3,4,7],[' ',6,9],[8,1,5]],
-			[[5,6,9],[8,3,1],[4,7,2]]]]).
+			[[3,4,7],[2,6,9],[8,1,5]],
+			[[5,6,9],[8,3,1],[4,7,' ']]]]).
 
 			sudokuComplet([[[[9,2,8],[4,1,7],[6,5,3]],
 						[[6,3,1],[5,9,2],[7,4,8]],
@@ -175,8 +175,8 @@ addPlayerMove(Coord):- asserta(jeuxJoueur([Coord])).
 %	concat(T,RestOfList,Output).
 
 deleteFromList(_,[],[]).
-deleteFromList(X,[X|Q],Output):- deleteFromList(X,Q,Output).
-deleteFromList(X,[T|Q],[T|RestOfList]):- deleteFromList(X,Q,RestOfList).
+deleteFromList(X,[X|Q],Output):- deleteFromList(X,Q,Output), !.
+deleteFromList(X,[T|Q],[T|RestOfList]):- deleteFromList(X,Q,RestOfList), !.
 
 deletePlayerMove(Coord):- isJeuJoueur(Coord),
 	jeuxJoueur(X),
@@ -252,17 +252,34 @@ setPossibles2([],[]).
 setPossibles2([A|B],[C|D]):- setPossibles3(A,C), setPossibles2(B,D).
 
 setPossibles([],[]).
-setPossibles([A|B],[C|D]):- setPossibles2(A,C), setPossibles(B,D).
+setPossibles([A|B],[C|D]):- setPossibles2(A,C), setPossibles(B,D),!.
 
 % eliminer tous les elements de la liste E presents dans la liste In: deleteTouteListe(In,E,Out)
-deleteTouteListe([A|[]],[],A):- !.
-deleteTouteListe(I,[],I).
+deleteTouteListe([A|[]],_,A):- !.
+% deleteTouteListe([A|[]],_,[A]):- !.
+deleteTouteListe(I,[],I):- !.
 deleteTouteListe(I,[A|B],O):- deleteFromList(A,I,O1), deleteTouteListe(O1,B,O),!.
 
-%% reduire la liste de posibles en fonctions des numeros dans la ligne, la colonne, et le block
-reduirePossibles(X,Y,I,O):- Xblock is floor(X/3), Yblock is (Y/3), getBlock(X,Y,I,Block),
-	getLine(X,I,Line), getColumn(Y,I,Column), deleteTouteListe(I,Block,O1),
-	deleteTouteListe(O1,Line,O2), deleteTouteListe(O2,Column,O).
+%% reduire la liste de posibles en fonctions des numeros dans la colonne, la ligne, et le block
+reduireColonne(X,Y,I,O):- getElement(X,Y,I,CurrentList), isList(CurrentList), getColumn(Y,I,Column), deleteFromList(CurrentList,Column,Column2),
+	deleteTouteListe(CurrentList,Column2,O1), changer(O1,X,Y,I,O), !.
+reduireColonne(_,_,I,I).
+	
+reduireLigne(X,Y,I,O):- getElement(X,Y,I,CurrentList), isList(CurrentList), getLine(X,I,Line), deleteFromList(CurrentList,Line,Line2),
+	deleteTouteListe(CurrentList,Line2,O1), changer(O1,X,Y,I,O), !.
+reduireLigne(_,_,I,I).
+	
+reduireBlock(X,Y,I,O):- getElement(X,Y,I,CurrentList), isList(CurrentList), Xblock is floor(X/3), Yblock is floor(Y/3), getBlock(Xblock,Yblock,I,Block),
+	deleteFromList(CurrentList,Block,Block2), deleteTouteListe(CurrentList,Block2,O1), changer(O1,X,Y,I,O), !.
+reduireBlock(_,_,I,I).
+
+reduirePossibles(X,Y,I,O):- reduireColonne(X,Y,I,O1), reduireLigne(X,Y,O1,O2), reduireBlock(X,Y,O2,O).
+	
+% reduirePossibles(X,Y,I,O):-  Xblock is floor(X/3), Yblock is floor(Y/3), getElement(X,Y,I,CurrentList), 
+% 	getBlock(Xblock,Yblock,I,Block), deleteFromList(CurrentList,Block,Block2), deleteTouteListe(CurrentList,Block2,O1), 
+%	getLine(X,I,Line), deleteFromList(CurrentList, Line, Line2), deleteTouteListe(O1,Line2,O2), 
+%	getColumn(Y,I,Column), deleteFromList(CurrentList, Column, Column2), deleteTouteListe(O2,Column2,O3),
+%	changer(O3,X,Y,I,O).
 
 completerSudoku(I,O).
 
