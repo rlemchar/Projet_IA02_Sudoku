@@ -79,6 +79,13 @@ affG([A|B])  :- affL(A), nl, affG(B).
 affS([A|[]]) :- affG(A), !.
 affS([A|B])  :- affG(A), write('-----------------'), nl, affS(B).
 
+%afficher Liste
+afficheListe([]):-!.
+afficheListe([T|Q]):- write(T),write('-'),
+											afficheListe(Q),!.
+
+afficheListe(X):- write('Not a list').
+
 	%% ===MODIFICATION DES VALEURS=== %%
 
 %remplacer l'Yeme element de la ligne est remplace par V
@@ -264,20 +271,20 @@ deleteTouteListe(I,[A|B],O):- deleteFromList(A,I,O1), deleteTouteListe(O1,B,O),!
 reduireColonne(X,Y,I,O):- getElement(X,Y,I,CurrentList), isList(CurrentList), getColumn(Y,I,Column), deleteFromList(CurrentList,Column,Column2),
 	deleteTouteListe(CurrentList,Column2,O1), changer(O1,X,Y,I,O), !.
 reduireColonne(_,_,I,I).
-	
+
 reduireLigne(X,Y,I,O):- getElement(X,Y,I,CurrentList), isList(CurrentList), getLine(X,I,Line), deleteFromList(CurrentList,Line,Line2),
 	deleteTouteListe(CurrentList,Line2,O1), changer(O1,X,Y,I,O), !.
 reduireLigne(_,_,I,I).
-	
+
 reduireBlock(X,Y,I,O):- getElement(X,Y,I,CurrentList), isList(CurrentList), Xblock is floor(X/3), Yblock is floor(Y/3), getBlock(Xblock,Yblock,I,Block),
 	deleteFromList(CurrentList,Block,Block2), deleteTouteListe(CurrentList,Block2,O1), changer(O1,X,Y,I,O), !.
 reduireBlock(_,_,I,I).
 
 reduirePossibles(X,Y,I,O):- reduireColonne(X,Y,I,O1), reduireLigne(X,Y,O1,O2), reduireBlock(X,Y,O2,O).
-	
-% reduirePossibles(X,Y,I,O):-  Xblock is floor(X/3), Yblock is floor(Y/3), getElement(X,Y,I,CurrentList), 
-% 	getBlock(Xblock,Yblock,I,Block), deleteFromList(CurrentList,Block,Block2), deleteTouteListe(CurrentList,Block2,O1), 
-%	getLine(X,I,Line), deleteFromList(CurrentList, Line, Line2), deleteTouteListe(O1,Line2,O2), 
+
+% reduirePossibles(X,Y,I,O):-  Xblock is floor(X/3), Yblock is floor(Y/3), getElement(X,Y,I,CurrentList),
+% 	getBlock(Xblock,Yblock,I,Block), deleteFromList(CurrentList,Block,Block2), deleteTouteListe(CurrentList,Block2,O1),
+%	getLine(X,I,Line), deleteFromList(CurrentList, Line, Line2), deleteTouteListe(O1,Line2,O2),
 %	getColumn(Y,I,Column), deleteFromList(CurrentList, Column, Column2), deleteTouteListe(O2,Column2,O3),
 %	changer(O3,X,Y,I,O).
 
@@ -287,60 +294,81 @@ completerSudoku(I,O).
 
 createRandomGrid:- sudokuEmpty(S),
 									 setPossibles(S,GrilleDesPossibles),
+									 repeat,
 									 iterateToCreateGrid(GrilleDesPossibles,CompleteGrid),
-									 affS(CompleteGrid).
+									 affS(CompleteGrid),!.
 
 
 
-iterateToCreateGrid(GrilleDesPossibles,Result):-iterateToCreateGrid(0,0,GrilleDesPossibles,Result).
+iterateToCreateGrid(GrilleDesPossibles,Result):-iterateToCreateGrid(0,0,GrilleDesPossibles,GrilleResultat),
+																									isSudokuValide(GrilleResultat),
+																									affS(GrilleResultat).
 
-iterateToCreateGrid(9,9,GrilleDesPossibles,Result):- reduirePossibles(X,Y,GrilleDesPossibles,Res),
-																											getElement(X,Y,Res,ListeDesPossibles),
+iterateToCreateGrid(8,8,GrilleDesPossibles,Result):- reduirePossibles(8,8,GrilleDesPossibles,Res),
+																											getElement(8,8,Res,ListeDesPossibles),
 																											randomInListeDesPossibles(ListeDesPossibles, ChoosenElement),
-																											changer(ChoosenElement,X,Y,GrilleDesPossibles,Result),!.
+																											changer(ChoosenElement,8,8,GrilleDesPossibles,Result),!.
 
 
-iterateToCreateGrid(X,Y,GrilleDesPossibles,Result):- write('etape write1'),nl,
-	write('X= '),write(X),nl,
-	write('etape write 2'),nl,
-																											write('Y= '),write(Y),nl,
-																											write('etape 0'),nl,
+iterateToCreateGrid(X,Y,GrilleDesPossibles,Result):- nl,nl,write('X= '), write(X),nl,
+																											write('Y= '), write(Y),nl,
+																											affS(GrilleDesPossibles),nl,
 																											reduirePossibles(X,Y,GrilleDesPossibles,Res),
-																											write('etape 1'),nl,
-																											getElement(X,Y,Res,ListeDesPossibles),
-																											write('etape 2'),nl,
+																											getElement(X,Y,Res,ListeDesPossibles),nl,
+																											write('Liste des possibles :'),afficheListe(ListeDesPossibles),nl,
 																											randomInListeDesPossibles(ListeDesPossibles, ChoosenElement),
-																											write('etape 3'),nl,
 																											changer(ChoosenElement,X,Y,GrilleDesPossibles,NewGrilleDesPossibles),
-																											write('etape 4'),nl,
-																											nextCoordinatesForIteration(X,Y,X1,Y1),
-																											write('etape 5'),nl,
-																											write('X1= '),write(X1),nl,
-																											write('etape 6'),nl,
-																											write('Y1= '),write(Y1),nl,
-																											write('etape 7'),nl,
-																											iterateToCreateGrid(X1,Y1,NewGrilleDesPossibles,Result).
+																											nextCoordinatesForIteration(X,Y,X1,Y1,ChangedLine),
+																											setNewLine(ChangedLine,NewGrilleDesPossibles,NewGrilleDesPossibles2),
+																											iterateToCreateGrid(X1,Y1,NewGrilleDesPossibles2,Result).
+
+%setNewLine fixe les element qui n'ont qu'un possible si on est passé à une nouvelle ligne
+
+setNewLine(0,GrillePossible,GrillePossible):-!.
+setNewLine(IndexLine,GrillePossible,Res):- setUniquePossible(GrillePossible, IndexLine, Res).
 
 
-
-%takeOffRandomCells(Sudoku, Result).
-
-nextCoordinatesForIteration(8,8,8,8):- fail,!.
-nextCoordinatesForIteration(OldX,OldY,NewX,NewY):- OldY =:= 8,
+nextCoordinatesForIteration(8,8,8,8,_):- fail,!.
+nextCoordinatesForIteration(OldX,OldY,NewX,NewY,ChangedLine):- OldY =:= 8,
 																											NewX is OldX+1,
-																											NewY is 0,!.
-nextCoordinatesForIteration(OldX,OldY,NewX,NewY):- NewY is OldY+1,
-																											NewX is OldX.
+																											NewY is 0,
+																											ChangedLine is NewX,!.
+nextCoordinatesForIteration(OldX,OldY,NewX,NewY,ChangedLine):- NewY is OldY+1,
+																									 NewX is OldX,
+																									 ChangedLine is 0,!.
 
 
-randomInListeDesPossibles(Liste, ChoosenElement):-  listLength(Liste,IndexMax),
-																													random(0,IndexMax,RandomIndex),
-																													getNlist(Liste,RandomIndex,ChoosenElement).
+randomInListeDesPossibles(Liste, ChoosenElement):-  isList(Liste),
+																										listLength(Liste,IndexMax),
+																										random(0,IndexMax,RandomIndex),
+																										getNlist(Liste,RandomIndex,ChoosenElement), nl,
+																										write('chose : '), write(ChoosenElement),nl,!.
+
+randomInListeDesPossibles(Liste, ChoosenElement):-  ChoosenElement = Liste,
+																										nl,write('no choice : '),write(ChoosenElement),nl.
 
 
 listLength([],0).
 listLength([_|Q],Length):- listLength(Q,LengthOfTheRest),
 											 Length is LengthOfTheRest+1.
+
+% Pour chaque element d'une ligne, si un element ne possède plus qu'un element dans sa liste des possibles,
+% Alors on donne cette valeur à la case.
+setUniquePossible([]).
+setUniquePossible(Grille, X, Res):- iterateUniquePossible(Grille, X,0,Res).
+
+iterateUniquePossible(Grille,_,9,Grille):- !.
+iterateUniquePossible(Grille,X,IndexColonne,Res):- reduirePossibles(X,IndexColonne,Grille,GrilleReduite),
+																								getElement(X,IndexColonne,GrilleReduite,Element),
+																								listLength(Element,Length),
+																								Length is 1,
+																								getNlist(0,Element,Value),
+																								changer(Value,X,IndexColonne,Grille,NewGrille),
+																								IndexColonne1 is IndexColonne +1,
+																								iterateUniquePossible(NewGrille,X,IndexColonne1,Res),!.
+
+iterateUniquePossible(Grille,X,IndexColonne,Res):- IndexColonne1 is IndexColonne+1,
+																									iterateUniquePossible(Grille,X,IndexColonne1,Res).
 
 
 
