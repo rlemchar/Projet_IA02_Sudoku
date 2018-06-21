@@ -1,4 +1,5 @@
 
+
 							%%% SUDOKU-SUDOKU-SUDOKU %%%
 
 
@@ -79,6 +80,13 @@ affG([A|B])  :- affL(A), nl, affG(B).
 affS([A|[]]) :- affG(A), !.
 affS([A|B])  :- affG(A), write('-----------------'), nl, affS(B).
 
+%afficher Liste
+afficheListe([]):-!.
+afficheListe([T|Q]):- write(T),write('-'),
+											afficheListe(Q),!.
+
+afficheListe(X):- write('Not a list').
+
 	%% ===MODIFICATION DES VALEURS=== %%
 
 %remplacer l'Yeme element de la ligne est remplace par V
@@ -143,6 +151,7 @@ getColumn(Column,[T|Q],Res):- columnFromRowTriplet(Column,T,Res2),
 
 % verification d'elements repetés dans une liste (le ' ' ne compte pas)
 verif([],[]).
+verif([L|Q],E):- isList(L), !, verif(Q,E).
 verif([' '|Q],E):- !, verif(Q,E).
 verif([X|Q],E):- verif(Q,E), element(X,E), !, fail.
 verif([X|Q],[X|E]):- verif(Q,E).
@@ -155,8 +164,19 @@ verification(X,Y,Sudoku):- getLine(X,Sudoku,Line),
 	getBlock(BlocX,BlocY,Sudoku,Bloc),
 	verif(Line,_),
 	verif(Column,_),
-	verif(Bloc,_).
+	verif(Bloc,_),!.
 verification(_,_,_):- write('Cet ajout est invalide.'),nl,nl,fail.
+
+% verification validité d'une case dans le cas de la verification d'un sudoku entier
+verification2(X,Y,Sudoku):- getLine(X,Sudoku,Line),
+	getColumn(Y,Sudoku,Column),
+	BlocX is floor(X/3),
+	BlocY is floor(Y/3),
+	getBlock(BlocX,BlocY,Sudoku,Bloc),
+	verif(Line,_),
+	verif(Column,_),
+	verif(Bloc,_),!.
+verification2(_,_,_):- fail.
 
 	%% ===ETAT DU SUDOKU=== %%
 
@@ -258,21 +278,20 @@ setPossibles([],[]).
 setPossibles([A|B],[C|D]):- setPossibles2(A,C), setPossibles(B,D),!.
 
 % on associe à chaque case vides une liste de possibles et on garde ses coordonnees (predicat casesVides([[X,Y],[X1,Y1],...]).)
-ajouterPossibles4([],[],_,_).
-ajouterPossibles4([' '|B],[[1,2,3,4,5,6,7,8,9]|D],X,Y):- casesVides(L), concat(L,[[X,Y,2]],L1), 
-	retract(casesVides(_)), asserta(casesVides(L1)), Y1 is (Y+1), ajouterPossibles4(B,D,X,Y1).
-ajouterPossibles4([A|B],[A|D],X,Y):- Y1 is (Y+1), ajouterPossibles4(B,D,X,Y1).
+ajouterPossibles4([],[],_,_,[]).
+ajouterPossibles4([' '|B],[[1,2,3,4,5,6,7,8,9]|D],X,Y,[[X,Y]|Q]):- Y1 is (Y+1), ajouterPossibles4(B,D,X,Y1,Q).
+ajouterPossibles4([A|B],[A|D],X,Y,L):- Y1 is (Y+1), ajouterPossibles4(B,D,X,Y1,L).
 
-ajouterPossibles3([],[],_,_).
-ajouterPossibles3([A|B],[C|D],X,Y):- ajouterPossibles4(A,C,X,Y), Y1 is (Y+3), ajouterPossibles3(B,D,X,Y1).
+ajouterPossibles3([],[],_,_,[]).
+ajouterPossibles3([A|B],[C|D],X,Y,L):- ajouterPossibles4(A,C,X,Y,T), Y1 is (Y+3), ajouterPossibles3(B,D,X,Y1,Q), concat(T,Q,L).
 
-ajouterPossibles2([],[],_).
-ajouterPossibles2([A|B],[C|D],X):- ajouterPossibles3(A,C,X,0), X1 is (X+1), ajouterPossibles2(B,D,X1).
+ajouterPossibles2([],[],_,[]).
+ajouterPossibles2([A|B],[C|D],X,L):- ajouterPossibles3(A,C,X,0,T), X1 is (X+1), ajouterPossibles2(B,D,X1,Q), concat(T,Q,L).
 
-ajouterPossibles([],[],_).
-ajouterPossibles([A|B],[C|D],X):- ajouterPossibles2(A,C,X), X1 is (X+3), ajouterPossibles(B,D,X1),!.
+ajouterPossibles([],[],_,[]).
+ajouterPossibles([A|B],[C|D],X,L):- ajouterPossibles2(A,C,X,T), X1 is (X+3), ajouterPossibles(B,D,X1,Q), concat(T,Q,L), !.
 
-ajouterPossibles(I,O):- retractall(casesVides(_)), assertz(casesVides([])), ajouterPossibles(I,O,0).
+ajouterPossibles(I,O,L):- ajouterPossibles(I,O,0,L).
 
 % eliminer tous les elements de la liste E presents dans la liste In: deleteTouteListe(In,E,Out)
 deleteTouteListe([A|[]],_,A):- !.
@@ -284,71 +303,153 @@ deleteTouteListe(I,[A|B],O):- deleteFromList(A,I,O1), deleteTouteListe(O1,B,O),!
 reduireColonne(X,Y,I,O):- getElement(X,Y,I,CurrentList), isList(CurrentList), getColumn(Y,I,Column), deleteFromList(CurrentList,Column,Column2),
 	deleteTouteListe(CurrentList,Column2,O1), changer(O1,X,Y,I,O), !.
 reduireColonne(_,_,I,I).
-	
+
 reduireLigne(X,Y,I,O):- getElement(X,Y,I,CurrentList), isList(CurrentList), getLine(X,I,Line), deleteFromList(CurrentList,Line,Line2),
 	deleteTouteListe(CurrentList,Line2,O1), changer(O1,X,Y,I,O), !.
 reduireLigne(_,_,I,I).
-	
+
 reduireBlock(X,Y,I,O):- getElement(X,Y,I,CurrentList), isList(CurrentList), Xblock is floor(X/3), Yblock is floor(Y/3), getBlock(Xblock,Yblock,I,Block),
 	deleteFromList(CurrentList,Block,Block2), deleteTouteListe(CurrentList,Block2,O1), changer(O1,X,Y,I,O), !.
 reduireBlock(_,_,I,I).
 
 reduirePossibles(X,Y,I,O):- reduireColonne(X,Y,I,O1), reduireLigne(X,Y,O1,O2), reduireBlock(X,Y,O2,O).
 
-% verifier si un changement va etre effectue dans la listes des possibles isChanged(In,Out,X,Y,OldVal,NewVal,Changed)
-%% si la liste est reduite a 1 chiffre la case est eliminee de la liste de cases vides, si elle est reduite la
-%% case est concatenée dans la fin de la liste avec valeur 2, sinon elle est concatenée au debut avec valeur 1 puis 0
-unchanged(2,1).
-unchanged(_,0).
-
-isChanged(X,Y,Val,Val):- casesVides(L), deleteFromList([X,Y,N],L,L1), retract(casesVides(_)), unchanged(N,N1),
-	concat([[X,Y,N1]],L1,L2), asserta(casesVides(L2)), !.
-isChanged(X,Y,_,Val):- isList(Val), casesVides(L), deleteFromList([X,Y,_],L,L1), retract(casesVides(_)), 
-	concat(L1,[[X,Y,2]],L2), asserta(casesVides(L2)).
-isChanged(X,Y,_,_):- casesVides(L), deleteFromList([X,Y,_],L,L1), retract(casesVides(_)), asserta(casesVides(L1)), write('('), write(X), write(';'), write(Y), write(')').
-
-% reduire la liste de possibles en modifiant casesVides()
-reducePossibles(X,Y,I,O):- getElement(X,Y,I,OldValue), isList(OldValue), reduireColonne(X,Y,I,O1), reduireLigne(X,Y,O1,O2), reduireBlock(X,Y,O2,O),
-	getElement(X,Y,O,NewValue), isChanged(X,Y,OldValue,NewValue), !.
-reducePossibles(_,_,I,I).
+% verifier si un changement va etre effectue dans la listes des possibles isChanged(In,Out,X,Y,OldVal,NewVal,OldList,NewList)
+isChanged(_,_,Val,Val,Lin,Lin):- !.
+isChanged(_,_,_,Val,Lin,Lin):- isList(Val), !.
+isChanged(X,Y,_,_,Lin,Lout):- deleteFromList([X,Y],Lin,Lout).
 	
-% reduirePossibles(X,Y,I,O):-  Xblock is floor(X/3), Yblock is floor(Y/3), getElement(X,Y,I,CurrentList), 
-% 	getBlock(Xblock,Yblock,I,Block), deleteFromList(CurrentList,Block,Block2), deleteTouteListe(CurrentList,Block2,O1), 
-%	getLine(X,I,Line), deleteFromList(CurrentList, Line, Line2), deleteTouteListe(O1,Line2,O2), 
+
+% reduire la liste de possibles en modifiant liste de cases Vides
+reducePossibles(X,Y,I,O,Lin,Lout):- getElement(X,Y,I,OldValue), isList(OldValue), reduireColonne(X,Y,I,O1), reduireLigne(X,Y,O1,O2), reduireBlock(X,Y,O2,O),
+	getElement(X,Y,O,NewValue), isChanged(X,Y,OldValue,NewValue,Lin,Lout), !, verification2(X,Y,O).
+reducePossibles(_,_,I,I,Lin,Lin).
+
+% reduirePossibles(X,Y,I,O):-  Xblock is floor(X/3), Yblock is floor(Y/3), getElement(X,Y,I,CurrentList),
+% 	getBlock(Xblock,Yblock,I,Block), deleteFromList(CurrentList,Block,Block2), deleteTouteListe(CurrentList,Block2,O1),
+%	getLine(X,I,Line), deleteFromList(CurrentList, Line, Line2), deleteTouteListe(O1,Line2,O2),
 %	getColumn(Y,I,Column), deleteFromList(CurrentList, Column, Column2), deleteTouteListe(O2,Column2,O3),
 %	changer(O3,X,Y,I,O).
 
 % completer une case vide tant qu il exite une liste de possibles pouvant etre reduite a 1 chiffre : completer(I,O,CasesVides)
-completer(I,I,[]).
-completer(I,O,[[X|[Y|_]]|Q]):- reducePossibles(X,Y,I,O1), completer(O1,O,Q).
+completer(I,I,[],Lin,Lin).
+completer(I,O,[[X|[Y|_]]|Q],Lin,Lout):- reducePossibles(X,Y,I,O1,Lin,Lout1), completer(O1,O,Q,Lout1,Lout).
 
-% verifier si les cases vides ont change
-%inLoop([]).
-%inLoop([[_|[_|[1|_]]]|_]):- !, fail.
-%inLoop([_|Q]):- inLoop(Q).
-
-inLoop([]).
-inLoop([[_,_,1]|_]):- !, fail.
-inLoop([[_,_,2]|_]):- !, fail.
-inLoop([_|Q]):- inLoop(Q).
 
 % complete toutes les cases à valeurs determinables, Fin=1 si le sudoku est complet, Fin=0 si il faut faire un choix
-%% ne pas oublier de faire un retract(casesVides(_)) après!!
-completerSudoku1(I,I,1):- isSudokuComplete(I), !.
-completerSudoku1(I,I,0):- casesVides(L), inLoop(L), !.
-completerSudoku1(I,O,Fin):- casesVides(L), write('-'), completer(I,O1,L), nl, completerSudoku1(O1,O,Fin).
-completerSudoku(I,O,Fin):- ajouterPossibles(I,O1), completerSudoku1(O1,O,Fin).
+completerSudoku1(I,I,[],[]):- !.
+completerSudoku1(I,O,Lin,Lout):- completer(I,O1,Lin,Lin,Lout1), Lout1\=Lin, !, completerSudoku1(O1,O,Lout1,Lout), !.
+completerSudoku1(I,O,Lin,Lout):- completer(I,O,Lin,Lin,Lout), !.
+completerSudoku(I,O,Lout):- ajouterPossibles(I,O1,L), completerSudoku1(O1,O,L,Lout).
 
-randChoix(I,O):- casesVides([[X,Y,_]|[[X1,Y1,_]|Q]]), getElement(X,Y,I,[T|_]), changer(T,X,Y,I,O), retract(casesVides(_)), concat([[X1,Y1,1]],Q,L), asserta(casesVides(L)). 
+% choix d un chiffre random quand bloque
+size([],0).
+size([_|Q],N):- size(Q,N1), N is (N1+1).
 
-resoudreSudoku1(I,O):- casesVides(Prev), write(Prev), nl, completerSudoku1(I,O1,Fin), casesVides(Post), retract(casesVides(Post)), asserta(casesVides(Prev)), Fin=1, O=O1, !.
-resoudreSudoku1(I,O):- completerSudoku1(I,O1,_), randChoix(O1,O2), casesVides(L), write(L), nl, resoudreSudoku1(O2,O).
-resoudreSudoku(I,O):- ajouterPossibles(I,O1), resoudreSudoku1(O1,O).
+randChoix(I,O,Lin,Lout):- size(Lin,S), S1 is (S-1), random(0,S1,N), getNlist(Lin,N,[X,Y]), getElement(X,Y,I,Possibles), 
+	size(Possibles,R), R1 is (R-1), random(0,R1,N2), getNlist(Possibles,N2,Val), changer(Val,X,Y,I,O), 
+	deleteFromList([X,Y],Lin,Lout).
 
-%resoudreSudoku1(I,O):- casesVides(Prev), write(Prev), nl, completerSudoku1(I,O1,Fin), casesVides(Post), retract(casesVides(Post)), asserta(casesVides(Prev)), 
-%	Fin=0, retract(casesVides(Prev)), asserta(casesVides(Post)), !, randChoix(O1,O2), write(Post), nl, resoudreSudoku1(O2,O).
-%resoudreSudoku1(I,O):- completerSudoku1(I,O,1), !.
-%resoudreSudoku(I,O):- ajouterPossibles(I,O1), resoudreSudoku1(O1,O).
+cycle(I,O,Lin,Lout):- randChoix(I,O1,Lin,Lout1), resoudreSudoku1(O1,O,Lout1,Lout).
+
+resoudreSudoku1(I,O,Lin,[]):- completerSudoku1(I,O,Lin,[]), !.
+resoudreSudoku1(I,O,Lin,Lout):- completerSudoku1(I,O1,Lin,Lout1), repeat, cycle(O1,O,Lout1,Lout), !.
+resoudreSudoku(I,O):- ajouterPossibles(I,O1,Lin), resoudreSudoku1(O1,O,Lin,_).
+
+
+%% Generation aléatoire de sudoku
+
+createRandomGrid:-sudokuEmpty(S),
+	setPossibles(S,GrilleDesPossibles),
+	repeat,
+	iterateToCreateGrid(GrilleDesPossibles,CompleteGrid),
+	takeOffCells(CompleteGrid,FinalGrid),
+	affS(FinalGrid),!.
+
+iterateToCreateGrid(GrilleDesPossibles,Result):-	write('generating grid ...'),nl,
+	iterateToCreateGrid(0,0,GrilleDesPossibles,GrilleResultat),
+	isSudokuValide(GrilleResultat),
+	Result = GrilleResultat.
+
+iterateToCreateGrid(8,8,GrilleDesPossibles,Result):- reduirePossibles(8,8,GrilleDesPossibles,Res),
+	getElement(8,8,Res,ListeDesPossibles),
+	randomInListeDesPossibles(ListeDesPossibles, ChoosenElement),
+	changer(ChoosenElement,8,8,GrilleDesPossibles,Result),!.
+
+
+iterateToCreateGrid(X,Y,GrilleDesPossibles,Result):- reduirePossibles(X,Y,GrilleDesPossibles,Res),
+	getElement(X,Y,Res,ListeDesPossibles),
+	randomInListeDesPossibles(ListeDesPossibles, ChoosenElement),
+	changer(ChoosenElement,X,Y,GrilleDesPossibles,NewGrilleDesPossibles),
+	nextCoordinatesForIteration(X,Y,X1,Y1,ChangedLine),
+	setNewLine(ChangedLine,NewGrilleDesPossibles,NewGrilleDesPossibles2),
+	iterateToCreateGrid(X1,Y1,NewGrilleDesPossibles2,Result).
+
+%setNewLine fixe les element qui n'ont qu un possible si on est passé à une nouvelle ligne
+
+setNewLine(0,GrillePossible,GrillePossible):-!.
+setNewLine(IndexLine,GrillePossible,Res):- setUniquePossible(GrillePossible, IndexLine, Res).
+
+
+nextCoordinatesForIteration(8,8,8,8,_):- fail,!.
+nextCoordinatesForIteration(OldX,OldY,NewX,NewY,ChangedLine):- OldY =:= 8,
+															NewX is OldX+1,
+															NewY is 0,
+															ChangedLine is NewX,!.
+nextCoordinatesForIteration(OldX,OldY,NewX,NewY,ChangedLine):- NewY is OldY+1,
+															 NewX is OldX,
+															 ChangedLine is 0,!.
+
+
+randomInListeDesPossibles(Liste, ChoosenElement):-  isList(Liste),
+												listLength(Liste,IndexMax),
+												random(0,IndexMax,RandomIndex),
+												getNlist(Liste,RandomIndex,ChoosenElement),!.
+
+randomInListeDesPossibles(Liste, ChoosenElement):-  ChoosenElement = Liste.
+
+
+listLength([],0).
+listLength([_|Q],Length):- listLength(Q,LengthOfTheRest),
+						 Length is LengthOfTheRest+1.
+
+% Pour chaque element d'une ligne, si un element ne possède plus qu un element dans sa liste des possibles,
+% Alors on donne cette valeur à la case.
+setUniquePossible([]).
+setUniquePossible(Grille, X, Res):- iterateUniquePossible(Grille, X,0,Res).
+
+iterateUniquePossible(Grille,_,9,Grille):- !.
+iterateUniquePossible(Grille,X,IndexColonne,Res):- reduirePossibles(X,IndexColonne,Grille,GrilleReduite),
+												getElement(X,IndexColonne,GrilleReduite,Element),
+												listLength(Element,Length),
+												Length is 1,
+												getNlist(0,Element,Value),
+												changer(Value,X,IndexColonne,Grille,NewGrille),
+												IndexColonne1 is IndexColonne +1,
+												iterateUniquePossible(NewGrille,X,IndexColonne1,Res),!.
+
+iterateUniquePossible(Grille,X,IndexColonne,Res):- IndexColonne1 is IndexColonne+1,
+												iterateUniquePossible(Grille,X,IndexColonne1,Res).
+
+isSudokuValide(Sudoku):- iterateIsSudokuValide(0,0,Sudoku).
+
+iterateIsSudokuValide(8,8,Sudoku):- verification2(8,8,Sudoku),!.
+
+iterateIsSudokuValide(X,Y,Sudoku):- verification2(X,Y,Sudoku),
+									nextCoordinatesForIteration(X,Y,X1,Y1,_),
+									iterateIsSudokuValide(X1,Y1,Sudoku).
+
+takeOffCells(Grid,NewGrid):- random(1,10,X1),
+							random(1,10,Y1),
+							random(1,10,X2),
+							random(1,10,Y2),
+							random(1,10,X3),
+							random(1,10,Y3),
+							changer(' ',X1,Y1,Grid,Grid1),
+							changer(' ',X2,Y2,Grid1,Grid2),
+							changer(' ',X3,Y3,Grid2,NewGrid).
+
+
 
 	%% ===PROGRAMME PRINCIPAL=== %%
 
