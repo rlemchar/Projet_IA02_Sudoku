@@ -351,13 +351,11 @@ completerSudoku(I,O,Fin):- ajouterPossibles(I,O1), completerSudoku1(O1,O,Fin).
 
 %% Generation aléatoire de sudoku
 
-createRandomGrid:-sudokuEmpty(S),
+createRandomGrid(RandomGrid):-sudokuEmpty(S),
 									 setPossibles(S,GrilleDesPossibles),
 									 repeat,
 									 iterateToCreateGrid(GrilleDesPossibles,CompleteGrid),
-									 takeOffCells(CompleteGrid,FinalGrid),
-									 affS(FinalGrid),!.
-
+									 takeOffCells(CompleteGrid,RandomGrid),!.
 
 
 iterateToCreateGrid(GrilleDesPossibles,Result):-	write('generating grid ...'),nl,
@@ -464,8 +462,8 @@ menu :- write('\t\t=====  MENU  ====='),nl,nl,
 	Choice=4, nl.
 
 handle(1):- write('---- RESOLUTION D\'UN SUDOKU ----'),nl,
-						sudokuTest(S),
-						asserta(sudokuGrid(S)),
+						createRandomGrid(RandomGrid),
+						asserta(sudokuGrid(RandomGrid)),
 						repeat,
 						userSolvingSudoku, !.
 handle(2):- write('---- PROPOSER UN SUDOKU ----'), nl,
