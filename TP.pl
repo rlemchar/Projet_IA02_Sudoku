@@ -188,12 +188,6 @@ addPlayerMove(Coord):- current_predicate(jeuxJoueur/1), !,
 	assertz(jeuxJoueur(Res)).
 addPlayerMove(Coord):- asserta(jeuxJoueur([Coord])).
 
-% Lorsque case est effacée
-% deleteFromList(X,[T|Q],Output):- X = T, Output = Q.
-% deleteFromList(X,[T|Q],Output):- X \= T,
-%	deleteFromList(X,Q,RestOfList),
-%	concat(T,RestOfList,Output).
-
 deleteFromList(_,[],[]).
 deleteFromList(X,[X|Q],Output):- deleteFromList(X,Q,Output), !.
 deleteFromList(X,[T|Q],[T|RestOfList]):- deleteFromList(X,Q,RestOfList), !.
@@ -299,7 +293,6 @@ ajouterPossibles(I,O,L):- ajouterPossibles(I,O,0,L).
 
 % eliminer tous les elements de la liste E presents dans la liste In: deleteTouteListe(In,E,Out)
 deleteTouteListe([A|[]],_,A):- !.
-% deleteTouteListe([A|[]],_,[A]):- !.
 deleteTouteListe(I,[],I):- !.
 deleteTouteListe(I,[A|B],O):- deleteFromList(A,I,O1), deleteTouteListe(O1,B,O),!.
 
@@ -323,17 +316,10 @@ isChanged(_,_,Val,Val,Lin,Lin):- !.
 isChanged(_,_,_,Val,Lin,Lin):- isList(Val), !.
 isChanged(X,Y,_,_,Lin,Lout):- deleteFromList([X,Y],Lin,Lout).
 
-
 % reduire la liste de possibles en modifiant liste de cases Vides
 reducePossibles(X,Y,I,O,Lin,Lout):- getElement(X,Y,I,OldValue), isList(OldValue), reduireColonne(X,Y,I,O1), reduireLigne(X,Y,O1,O2), reduireBlock(X,Y,O2,O),
 	getElement(X,Y,O,NewValue), isChanged(X,Y,OldValue,NewValue,Lin,Lout), !, verification2(X,Y,O).
 reducePossibles(_,_,I,I,Lin,Lin).
-
-% reduirePossibles(X,Y,I,O):-  Xblock is floor(X/3), Yblock is floor(Y/3), getElement(X,Y,I,CurrentList),
-% 	getBlock(Xblock,Yblock,I,Block), deleteFromList(CurrentList,Block,Block2), deleteTouteListe(CurrentList,Block2,O1),
-%	getLine(X,I,Line), deleteFromList(CurrentList, Line, Line2), deleteTouteListe(O1,Line2,O2),
-%	getColumn(Y,I,Column), deleteFromList(CurrentList, Column, Column2), deleteTouteListe(O2,Column2,O3),
-%	changer(O3,X,Y,I,O).
 
 % completer une case vide tant qu il exite une liste de possibles pouvant etre reduite a 1 chiffre : completer(I,O,CasesVides)
 completer(I,I,[],Lin,Lin).
